@@ -1,0 +1,387 @@
+﻿@model TestKB.ViewModels.EditContentViewModel
+
+@{
+    ViewData["Title"] = "İçerik Düzenle";
+    Layout = "_Layout";
+    // Load all items from ViewBag for client-side use.
+    var allItemsJson = ViewBag.AllItemsJson as string ?? "[]";
+}
+
+<div class="container mt-4">
+    @* Success message display *@
+    @{
+        var successMessage = TempData["SuccessMessage"] as string;
+    }
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success">
+            @successMessage
+        </div>
+    }
+
+    <h2>İçerik Düzenle</h2>
+
+    <div class="row">
+        <!-- 1. Yeni İçerik Ekle Card -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    Sıfırdan Yeni İçerik Ekle
+                </div>
+                <div class="card-body">
+                    <form asp-action="EditNewContent" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="form-group">
+                            <label asp-for="NewContent.Category">Yeni Kategori</label>
+                            <input asp-for="NewContent.Category" class="form-control" id="newCategory" placeholder="Kategori ismi giriniz" />
+                            <span asp-validation-for="NewContent.Category" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="NewContent.SubCategory">Yeni Alt Kategori</label>
+                            <input asp-for="NewContent.SubCategory" class="form-control" id="newSubCategory" placeholder="Alt kategori ismi giriniz" />
+                            <span asp-validation-for="NewContent.SubCategory" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="NewContent.Content">İçerik</label>
+                            <textarea asp-for="NewContent.Content" class="form-control" id="newContent" rows="4" placeholder="İçerik giriniz"></textarea>
+                            <span asp-validation-for="NewContent.Content" class="text-danger"></span>
+                        </div>
+                        <button type="submit" class="btn btn-success">Yeni İçerik Ekle</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Var Olan İçerik Düzenle Card -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    Var Olan İçeriği Düzenle
+                </div>
+                <div class="card-body">
+                    <form asp-action="ExtendContent" method="post" id="extendContentForm">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <!-- Kategori Section -->
+                        <div class="form-group">
+                            <label for="selectedCategory">Mevcut Kategori Seç</label>
+                            <div class="input-group">
+                                <select asp-for="ExtendContent.SelectedCategory" class="form-control" id="selectedCategory" onchange="onCategoryChange()">
+                                    <option value="">Kategori seçiniz</option>
+                                    @if (Model.ExistingCategories != null)
+                                    {
+                                        foreach (var cat in Model.ExistingCategories)
+                                        {
+                                            var isSelected = cat.Equals(Model.ExtendContent.SelectedCategory ?? "", StringComparison.OrdinalIgnoreCase);
+                                            <option value="@cat" selected="@(isSelected ? "selected" : null)">@cat</option>
+                                        }
+                                    }
+                                </select>
+                                <div class="input-group-append ml-2">
+                                    <button type="button" class="btn btn-outline-success" id="editCategoryBtn" onclick="toggleEditCategory()" style="display:none;">
+                                        <i class="fa fa-pencil"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Editable Category Input -->
+                        <div class="form-group" id="editCategoryDiv" style="display:none;">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="editedCategory" name="ExtendContent.EditedCategory" placeholder="Yeni kategori ismi giriniz" />
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-primary" onclick="saveEditedCategory()">Kaydet</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alt Kategori Section -->
+                        <div class="form-group">
+                            <label for="selectedSubCategory">Mevcut Alt Kategori Seç</label>
+                            <div class="input-group">
+                                <select asp-for="ExtendContent.SelectedSubCategory" class="form-control" id="selectedSubCategory" onchange="onSubCategoryChange()">
+                                    <option value="">Alt kategori seçiniz</option>
+                                </select>
+                                <div class="input-group-append ml-2">
+                                    <button type="button" class="btn btn-outline-success" id="editSubCategoryBtn" onclick="toggleEditSubCategory()" style="display:none;">
+                                        <i class="fa fa-pencil"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <span asp-validation-for="ExtendContent.SelectedSubCategory" class="text-danger"></span>
+                        </div>
+                        <!-- Editable Alt Kategori Input -->
+                        <div class="form-group" id="editSubCategoryDiv" style="display:none;">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="editedSubCategory" name="ExtendContent.EditedSubCategory" placeholder="Yeni alt kategori ismi giriniz" />
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-primary" onclick="saveEditedSubCategory()">Kaydet</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- İçerik Section -->
+                        <div class="form-group" id="contentDiv" style="display:none;">
+                            <label asp-for="ExtendContent.Content">İçerik</label>
+                            <textarea asp-for="ExtendContent.Content" class="form-control" id="extendContent" rows="4" placeholder="İçerik ekleyiniz"></textarea>
+                            <span asp-validation-for="ExtendContent.Content" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitContentBtn" style="display:none;">İçerik Güncelle</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Kategori Sil Card -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    Kategori Sil
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="deleteCategorySelect">Silinecek Kategori</label>
+                        <select id="deleteCategorySelect" class="form-control">
+                            <option value="">Kategori seçiniz</option>
+                            @if (Model.ExistingCategories != null)
+                            {
+                                foreach (var cat in Model.ExistingCategories)
+                                {
+                                    <option value="@cat">@cat</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-danger" onclick="deleteCategory()">Kategori Sil</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Global variables to store old values and all items
+        let oldCategoryValue = "";
+        let oldSubCategoryValue = "";
+        let allItems = @Html.Raw(allItemsJson);
+        const categorySelect = document.getElementById('selectedCategory');
+        const subCategorySelect = document.getElementById('selectedSubCategory');
+        const extendContentBox = document.getElementById('extendContent');
+
+        // Refresh the global items array from the server
+        function refreshAllItems(callback) {
+            fetch('/Home/GetContentItems')
+                .then(res => res.json())
+                .then(updatedItems => {
+                    allItems = updatedItems;
+                    console.log("Updated items:", allItems);
+                    if(callback) callback();
+                })
+                .catch(error => console.error("Error refreshing items:", error));
+        }
+
+        // When the category changes, update the UI and repopulate subcategories
+        function onCategoryChange() {
+            console.log("Category change detected.");
+            oldCategoryValue = categorySelect.value;
+            refreshAllItems(() => {
+                document.getElementById('editCategoryBtn').style.display = categorySelect.value ? 'block' : 'none';
+                populateSubCategories(categorySelect.value);
+                subCategorySelect.value = "";
+                document.getElementById('editSubCategoryBtn').style.display = 'none';
+                document.getElementById('contentDiv').style.display = 'none';
+                document.getElementById('submitContentBtn').style.display = 'none';
+            });
+        }
+
+        function toggleEditCategory() {
+            const editDiv = document.getElementById('editCategoryDiv');
+            if (editDiv.style.display === 'none') {
+                document.getElementById('editedCategory').value = categorySelect.value;
+                editDiv.style.display = 'block';
+            } else {
+                editDiv.style.display = 'none';
+            }
+        }
+
+        function saveEditedCategory() {
+            const newCategory = document.getElementById('editedCategory').value.trim();
+            if (newCategory === "") {
+                alert("Kategori ismi boş olamaz.");
+                return;
+            }
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                if (categorySelect.options[i].value === categorySelect.value) {
+                    categorySelect.options[i].text = newCategory;
+                    categorySelect.options[i].value = newCategory;
+                    break;
+                }
+            }
+            categorySelect.value = newCategory;
+            document.getElementById('editCategoryDiv').style.display = 'none';
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            fetch('/Home/UpdateCategory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ OldCategory: oldCategoryValue, NewCategory: newCategory })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("Kategori güncellenirken hata: " + data.message);
+                } else {
+                    oldCategoryValue = newCategory;
+                    refreshAllItems(() => {
+                        populateSubCategories(newCategory);
+                    });
+                }
+            })
+            .catch(error => console.error(error));
+        }
+
+        function populateSubCategories(category) {
+            while (subCategorySelect.options.length > 1) {
+                subCategorySelect.remove(1);
+            }
+            if (!category) {
+                return;
+            }
+            let subcats = new Set();
+            allItems.forEach(item => {
+                if (item.category && item.category.trim().toLowerCase() === category.trim().toLowerCase()) {
+                    subcats.add(item.subCategory ? item.subCategory.trim() : "");
+                }
+            });
+            const subcatArr = Array.from(subcats).sort();
+            subcatArr.forEach(subcat => {
+                let opt = document.createElement('option');
+                opt.value = subcat;
+                opt.textContent = subcat;
+                subCategorySelect.appendChild(opt);
+            });
+        }
+
+        function onSubCategoryChange() {
+            oldSubCategoryValue = subCategorySelect.value;
+            if (subCategorySelect.value) {
+                document.getElementById('editSubCategoryBtn').style.display = 'block';
+                let matches = allItems.filter(item =>
+                    item.category.toLowerCase() === categorySelect.value.toLowerCase() &&
+                    item.subCategory.toLowerCase() === subCategorySelect.value.toLowerCase()
+                );
+                extendContentBox.value = matches.length > 0 ? matches[0].content : "";
+                document.getElementById('contentDiv').style.display = 'block';
+                document.getElementById('submitContentBtn').style.display = 'block';
+            } else {
+                document.getElementById('editSubCategoryBtn').style.display = 'none';
+                document.getElementById('contentDiv').style.display = 'none';
+                document.getElementById('submitContentBtn').style.display = 'none';
+            }
+        }
+
+        function toggleEditSubCategory() {
+            const editDiv = document.getElementById('editSubCategoryDiv');
+            if (editDiv.style.display === 'none') {
+                document.getElementById('editedSubCategory').value = subCategorySelect.value;
+                editDiv.style.display = 'block';
+            } else {
+                editDiv.style.display = 'none';
+            }
+        }
+
+        function saveEditedSubCategory() {
+            const newSubCategory = document.getElementById('editedSubCategory').value.trim();
+            if (newSubCategory === "") {
+                alert("Alt kategori ismi boş olamaz.");
+                return;
+            }
+            for (let i = 0; i < subCategorySelect.options.length; i++) {
+                if (subCategorySelect.options[i].value === subCategorySelect.value) {
+                    subCategorySelect.options[i].text = newSubCategory;
+                    subCategorySelect.options[i].value = newSubCategory;
+                    break;
+                }
+            }
+            subCategorySelect.value = newSubCategory;
+            document.getElementById('editSubCategoryDiv').style.display = 'none';
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            fetch('/Home/UpdateSubCategory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    Category: categorySelect.value,
+                    OldSubCategory: oldSubCategoryValue,
+                    NewSubCategory: newSubCategory
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("Alt kategori güncellenirken hata: " + data.message);
+                } else {
+                    oldSubCategoryValue = newSubCategory;
+                    refreshAllItems(() => {
+                        populateSubCategories(categorySelect.value);
+                    });
+                }
+            })
+            .catch(error => console.error(error));
+        }
+
+        function deleteCategory() {
+            const select = document.getElementById('deleteCategorySelect');
+            const category = select.value;
+            if (!category) {
+                alert("Lütfen silinecek kategoriyi seçiniz.");
+                return;
+            }
+
+            if (!confirm("Seçili kategorideki tüm içerikler silinecektir. Emin misiniz?")) {
+                return;
+            }
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            fetch('/Home/DeleteCategory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ Category: category })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert("Kategori silinirken hata: " + data.message);
+                } else {
+                    alert(data.message);
+                    location.reload();
+                }
+            })
+            .catch(error => console.error("Hata oluştu:", error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (categorySelect.value) {
+                populateSubCategories(categorySelect.value);
+                var preselectedSub = "@Model.ExtendContent.SelectedSubCategory";
+                if (preselectedSub) {
+                    subCategorySelect.value = preselectedSub;
+                    onSubCategoryChange();
+                }
+            }
+        });
+    </script>
+}

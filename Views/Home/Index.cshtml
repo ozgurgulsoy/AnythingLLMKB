@@ -1,0 +1,56 @@
+﻿@model TestKB.ViewModels.ContentListViewModel
+@{
+    ViewData["Title"] = "Ana Sayfa";
+    Layout = "_Layout"; // Uses the layout with the navbar
+    var selectedCategory = Model.SelectedCategory;
+}
+
+<div class="container mt-4">
+    <!-- Filter Form -->
+    <form asp-controller="Home" method="get" asp-action="Index" class="mb-4">
+        <div class="form-row align-items-end">
+            <div class="col-md-4">
+                <label for="categoryFilter">Kategori Seç</label>
+                <select id="categoryFilter" name="category" class="form-control">
+                    <option value="">Tüm Kategoriler</option>
+                    @foreach (var category in Model.AllCategories)
+                    {
+                        <option value="@category" selected="@(string.Equals(category, selectedCategory, StringComparison.OrdinalIgnoreCase))">
+                            @category
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-block">Filtrele</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Display Content Items as Bootstrap Cards -->
+    <div class="row">
+        @if (Model.ContentItems != null && Model.ContentItems.Any())
+        {
+            foreach (var item in Model.ContentItems)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">@item.Category</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">@item.SubCategory</h6>
+                            <p class="card-text">@item.Content</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert">
+                    İçerik bulunamadı.
+                </div>
+            </div>
+        }
+    </div>
+</div>
