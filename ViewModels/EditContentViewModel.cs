@@ -1,4 +1,6 @@
-﻿namespace TestKB.ViewModels
+﻿using TestKB.Models;
+
+namespace TestKB.ViewModels
 {
     public class EditContentViewModel
     {
@@ -6,10 +8,12 @@
         public Dictionary<string, List<string>> ExistingSubCategories { get; set; }
 
         // For "New Content" form
-        public NewContentModel NewContent { get; set; }
+        public NewContentViewModel NewContent { get; set; }
 
         // For "Extend Content" form
-        public ExtendContentModel ExtendContent { get; set; }
+        public ExtendContentViewModel ExtendContent { get; set; }
+
+        public List<ContentItem> ContentItems { get; set; }
     }
 
 }

@@ -70,21 +70,6 @@
     "Content": "Ağ yedekleme, ağdaki verilerin ve yapılandırmaların düzenli olarak yedeklenmesidir. Veri kaybı durumunda ağın hızlı bir şekilde yeniden kurulmasını sağlar."
   },
   {
-    "Category": "Modern Ağ Teknolojileri",
-    "SubCategory": "SDN (Yazılım Tanımlı Ağ)",
-    "Content": "SDN, ağ kontrolünün yazılım tabanlı bir yaklaşımla merkezi olarak yönetilmesini sağlayan bir teknolojidir. Ağ esnekliğini ve ölçeklenebilirliğini artırır."
-  },
-  {
-    "Category": "Modern Ağ Teknolojileri",
-    "SubCategory": "NFV (Ağ Fonksiyonlarının Sanallaştırılması)",
-    "Content": "NFV, ağ fonksiyonlarının (örneğin güvenlik duvarı, yük dengeleme) sanal makineler üzerinde çalıştırılmasını sağlar. Donanım bağımlılığını azaltır ve maliyetleri düşürür."
-  },
-  {
-    "Category": "Modern Ağ Teknolojileri",
-    "SubCategory": "IoT (Nesnelerin İnterneti)",
-    "Content": "IoT, cihazların internete bağlanarak veri alışverişi yapmasını sağlayan bir kavramdır. Akıllı evler, giyilebilir cihazlar ve endüstriyel sensörler gibi birçok alanda kullanılır."
-  },
-  {
     "Category": "Ağ Uygulamaları",
     "SubCategory": "Bulut Bilişim",
     "Content": "Bulut bilişim, internet üzerinden sunulan bilgi işlem kaynaklarına (sunucular, depolama, yazılım) erişmeyi sağlar. Verilerin ve uygulamaların merkezi olarak yönetilmesini kolaylaştırır."

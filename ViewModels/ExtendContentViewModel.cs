@@ -2,7 +2,7 @@
 
 namespace TestKB.ViewModels
 {
-    public class ExtendContentModel
+    public class ExtendContentViewModel
     {
         [Required(ErrorMessage = "Lütfen bir kategori seçiniz.")]
         public string? SelectedCategory { get; set; }
@@ -14,7 +14,7 @@ namespace TestKB.ViewModels
         public string? NewSubCategory { get; set; }
 
         [Required(ErrorMessage = "İçerik boş bırakılamaz.")]
-        public string? Content { get; set; }
+        public string Content { get; set; }
 
         // Change these to nullable to avoid automatic "required" errors
         public string? EditedCategory { get; set; }
