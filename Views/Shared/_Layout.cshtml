@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-    
+
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Menüyü Değiştir">
@@ -22,7 +22,6 @@
                 <li class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "Edit" ? "active" : "")">
                     <a class="nav-link" asp-controller="Home" asp-action="Edit">İçerik Düzenle</a>
                 </li>
-                <!-- New link for Converted Content -->
                 <li class="nav-item @(ViewContext.RouteData.Values["action"]?.ToString() == "ConvertedContent" ? "active" : "")">
                     <a class="nav-link" asp-controller="Home" asp-action="ConvertedContent">Dönüştürülmüş İçerik</a>
                 </li>
@@ -30,8 +29,8 @@
         </div>
     </nav>
 
-
-    <div class="container mt-4">
+    <!-- Changed container to container-fluid -->
+    <div class="container-fluid mt-4">
         @RenderBody()
     </div>
 

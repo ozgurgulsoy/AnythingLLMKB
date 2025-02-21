@@ -1,79 +1,41 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+
 using System.Text.Json;
 using TestKB.Models;
 using TestKB.Services;
 using TestKB.ViewModels;
-using Microsoft.AspNetCore.Hosting;
+
 
 namespace TestKB.Controllers
 {
-    /// <summary>
-    /// Controller responsible for handling content management operations.
-    /// </summary>
     public class HomeController : Controller
     {
         private readonly IContentService _contentService;
         private readonly IWebHostEnvironment _env;
-        private static readonly object _logLock = new object();
+        private readonly ILogger<HomeController> _logger;
 
-        /// <summary>
-        /// Initializes a new instance of the HomeController.
-        /// </summary>
-        /// <param name="contentService">The content service dependency.</param>
-        /// <param name="env">The hosting environment.</param>
-        public HomeController(IContentService contentService, IWebHostEnvironment env)
+        public HomeController(IContentService contentService, IWebHostEnvironment env, ILogger<HomeController> logger)
         {
             _contentService = contentService ?? throw new ArgumentNullException(nameof(contentService));
             _env = env ?? throw new ArgumentNullException(nameof(env));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Renders the department selection view.
-        /// </summary>
-        /// <returns>The DepartmentSelect view.</returns>
-        public IActionResult DepartmentSelect()
-        {
-            return View();
-        }
+        public IActionResult DepartmentSelect() => View();
 
-        /// <summary>
-        /// Redirects to the Index action after a department is selected.
-        /// </summary>
-        /// <param name="department">The selected department.</param>
-        /// <returns>Redirect to Index action with department parameter.</returns>
         [HttpPost]
-        public IActionResult SelectDepartment(Department department)
-        {
-            return RedirectToAction("Index", new { dept = department });
-        }
+        public IActionResult SelectDepartment(Department department) =>
+            RedirectToAction("Index", new { dept = department });
 
-        /// <summary>
-        /// Retrieves content items and displays them filtered by category.
-        /// </summary>
-        /// <param name="category">The category filter.</param>
-        /// <param name="dept">Optional department filter.</param>
-        /// <returns>The Index view with a list of content items.</returns>
         public IActionResult Index(string category, Department? dept)
         {
             try
             {
-                List<ContentItem> allItems = _contentService.GetContentItems();
+                List<ContentItem> allItems = _contentService.GetContentItems(true);
 
-                var allCategories = allItems
-                    .Select(item => item.Category)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(c => c)
-                    .ToList();
+                var allCategories = GetDistinctOrderedCategories(allItems);
 
-                var filteredItems = string.IsNullOrWhiteSpace(category)
-                    ? allItems
-                    : allItems.Where(item =>
-                        string.Equals(item.Category, category, StringComparison.OrdinalIgnoreCase))
-                      .ToList();
+                var filteredItems = FilterItemsByCategory(allItems, category);
 
                 var viewModel = new ContentListViewModel
                 {
@@ -86,86 +48,38 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                LogError($"Index action failed: {ex.Message}");
+                _logger.LogError(ex, "Index action failed");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
 
-        /// <summary>
-        /// Retrieves the content item for editing based on selected category and subcategory.
-        /// </summary>
-        /// <param name="selectedCategory">The selected category.</param>
-        /// <param name="selectedSubCategory">The selected subcategory.</param>
-        /// <returns>The Edit view with pre-filled values if available.</returns>
         [HttpGet]
         public IActionResult Edit(string selectedCategory, string selectedSubCategory)
         {
             try
             {
-                var extendModel = new ExtendContentViewModel();
-                var items = _contentService.GetContentItems();
-
-                if (!string.IsNullOrWhiteSpace(selectedCategory))
-                {
-                    extendModel.SelectedCategory = selectedCategory;
-                }
-
-                if (!string.IsNullOrWhiteSpace(selectedSubCategory))
-                {
-                    extendModel.SelectedSubCategory = selectedSubCategory;
-                    var entry = items.FirstOrDefault(x =>
-                        x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase) &&
-                        x.SubCategory.Equals(selectedSubCategory, StringComparison.OrdinalIgnoreCase));
-
-                    if (entry != null)
-                    {
-                        extendModel.Content = entry.Content;
-                    }
-                }
-
+                var items = _contentService.GetContentItems(true);
+                var extendModel = CreateExtendContentViewModel(selectedCategory, selectedSubCategory, items);
                 var viewModel = BuildEditContentViewModel(new NewContentViewModel(), extendModel);
+
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(items);
                 return View(viewModel);
             }
             catch (Exception ex)
             {
-                LogError($"Edit GET action failed: {ex.Message}");
+                _logger.LogError(ex, "Edit GET action failed");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
 
-        /// <summary>
-        /// Adds a new content item based on the provided model.
-        /// </summary>
-        /// <param name="model">The new content view model.</param>
-        /// <returns>Redirects to the Edit view if successful, otherwise returns the view with errors.</returns>
         [HttpPost]
         public IActionResult EditNewContent([Bind(Prefix = "NewContent")] NewContentViewModel model)
         {
             try
             {
-                var allItems = _contentService.GetContentItems();
+                var allItems = _contentService.GetContentItems(true);
 
-                // Check if category already exists.
-                bool categoryExists = allItems.Any(x =>
-                    x.Category.Equals(model.Category?.Trim(), StringComparison.OrdinalIgnoreCase));
-
-                if (categoryExists)
-                {
-                    ModelState.AddModelError("NewContent.Category", "Bu kategori zaten mevcut!");
-                }
-
-                if (!string.IsNullOrWhiteSpace(model.SubCategory))
-                {
-                    bool subCatExists = allItems.Any(x =>
-                        x.Category.Equals(model.Category?.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                        x.SubCategory.Equals(model.SubCategory?.Trim(), StringComparison.OrdinalIgnoreCase));
-
-                    if (subCatExists)
-                    {
-                        ModelState.AddModelError("NewContent.SubCategory", "Bu alt kategori zaten mevcut!");
-                    }
-                }
+                ValidateNewContentModel(model, allItems);
 
                 if (ModelState.IsValid)
                 {
@@ -175,123 +89,68 @@ namespace TestKB.Controllers
                 }
 
                 var vm = BuildEditContentViewModel(model, new ExtendContentViewModel());
-                vm = AddAllItemsJson(vm);
+                ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
                 return View("Edit", vm);
             }
             catch (Exception ex)
             {
-                LogError($"EditNewContent action failed: {ex.Message}");
+                _logger.LogError(ex, "EditNewContent action failed");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
 
-        /// <summary>
-        /// Extends or updates an existing content item.
-        /// </summary>
-        /// <param name="model">The view model containing updated content data.</param>
-        /// <returns>Redirects to the Edit view if successful, otherwise returns the view with errors.</returns>
         [HttpPost]
         public IActionResult ExtendContent([Bind(Prefix = "ExtendContent")] ExtendContentViewModel model)
         {
             try
             {
-                // If the content is empty, add a model error.
+                _logger.LogDebug("ExtendContent params: Category={Category}, SubCategory={SubCategory}, NewSubCategory={NewSubCategory}",
+                                model.SelectedCategory, model.SelectedSubCategory, model.NewSubCategory);
+
                 if (string.IsNullOrWhiteSpace(model.Content))
                 {
                     ModelState.AddModelError("ExtendContent.Content", "İçerik boş bırakılamaz.");
                 }
 
-                var items = _contentService.GetContentItems();
+                var items = _contentService.GetContentItems(true);
                 var chosenCategory = model.SelectedCategory?.Trim();
                 var chosenSubCategory = model.SelectedSubCategory?.Trim();
                 var newSubCat = model.NewSubCategory?.Trim();
 
-                // Use newSubCat if provided; otherwise use chosenSubCategory.
-                var actualSubCategory = !string.IsNullOrWhiteSpace(newSubCat) ? newSubCat : chosenSubCategory;
+                // Normalize input data
+                var actualSubCategory = NormalizeSubcategorySelection(ref chosenSubCategory, newSubCat, chosenCategory, items);
 
-                // Default subcategory handling.
+                // Validate subcategory selection
                 if (string.IsNullOrWhiteSpace(chosenSubCategory) && string.IsNullOrWhiteSpace(newSubCat))
                 {
-                    var defaultSub = items.FirstOrDefault(x =>
-                        x.Category.Equals(chosenCategory, StringComparison.OrdinalIgnoreCase))?.SubCategory;
-
-                    if (!string.IsNullOrWhiteSpace(defaultSub))
-                    {
-                        chosenSubCategory = defaultSub;
-                        model.SelectedSubCategory = defaultSub;
-                        actualSubCategory = defaultSub;
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("ExtendContent.SelectedSubCategory",
-                            "Lütfen mevcut bir alt kategori seçiniz veya yeni bir alt kategori giriniz.");
-                    }
+                    TryFindDefaultSubcategory(items, chosenCategory, ref chosenSubCategory, ref actualSubCategory, model);
                 }
 
-                // Check if the new subcategory already exists.
-                if (!string.IsNullOrWhiteSpace(newSubCat))
-                {
-                    bool subCatExists = items.Any(x =>
-                        x.Category.Equals(chosenCategory, StringComparison.OrdinalIgnoreCase) &&
-                        x.SubCategory.Equals(actualSubCategory, StringComparison.OrdinalIgnoreCase));
-
-                    if (subCatExists)
-                    {
-                        ModelState.AddModelError("ExtendContent.NewSubCategory", "Bu alt kategori zaten mevcut!");
-                    }
-                }
+                // Validate new subcategory for duplicates
+                ValidateNewSubcategory(newSubCat, chosenCategory, items);
 
                 if (!ModelState.IsValid)
                 {
+                    LogModelStateErrors();
                     var vm = BuildEditContentViewModel(new NewContentViewModel(), model);
                     ViewBag.AllItemsJson = JsonSerializer.Serialize(items);
                     return View("Edit", vm);
                 }
 
-                // Update category if EditedCategory is provided.
-                if (!string.IsNullOrWhiteSpace(model.EditedCategory) && model.EditedCategory.Trim() != chosenCategory)
+                // Handle category rename if needed
+                if (ShouldRenameCategory(model, chosenCategory))
                 {
-                    string newCategory = model.EditedCategory.Trim();
-                    foreach (var item in items.Where(x =>
-                        x.Category.Equals(chosenCategory, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        item.Category = newCategory;
-                    }
-                    chosenCategory = newCategory;
+                    chosenCategory = RenameCategoryInAllItems(items, chosenCategory, model.EditedCategory.Trim());
                 }
 
-                // Update subcategory if EditedSubCategory is provided.
-                if (!string.IsNullOrWhiteSpace(model.EditedSubCategory) && model.EditedSubCategory.Trim() != chosenSubCategory)
+                // Handle subcategory rename if needed
+                if (ShouldRenameSubcategory(model, chosenSubCategory))
                 {
-                    string newSubCategory = model.EditedSubCategory.Trim();
-                    foreach (var item in items.Where(x =>
-                        x.Category.Equals(chosenCategory, StringComparison.OrdinalIgnoreCase) &&
-                        x.SubCategory.Equals(chosenSubCategory, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        item.SubCategory = newSubCategory;
-                    }
-                    chosenSubCategory = newSubCategory;
-                    actualSubCategory = newSubCategory;
+                    actualSubCategory = RenameSubcategoryInItems(items, chosenCategory, chosenSubCategory, model.EditedSubCategory.Trim());
+                    chosenSubCategory = actualSubCategory;
                 }
 
-                // Update existing entry or add a new one.
-                var existingEntry = items.FirstOrDefault(x =>
-                    x.Category.Equals(chosenCategory, StringComparison.OrdinalIgnoreCase) &&
-                    x.SubCategory.Equals(actualSubCategory, StringComparison.OrdinalIgnoreCase));
-
-                if (existingEntry != null)
-                {
-                    existingEntry.Content = model.Content?.Trim();
-                }
-                else
-                {
-                    items.Add(new ContentItem
-                    {
-                        Category = chosenCategory,
-                        SubCategory = actualSubCategory,
-                        Content = model.Content?.Trim()
-                    });
-                }
+                UpdateOrCreateContentItem(items, chosenCategory, actualSubCategory, model.Content?.Trim());
 
                 _contentService.UpdateContentItems(items);
                 TempData["SuccessMessage"] = "İçerik güncellendi.";
@@ -299,16 +158,11 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                LogError($"ExtendContent action failed: {ex.Message}");
+                _logger.LogError(ex, "ExtendContent action failed");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
 
-        /// <summary>
-        /// Updates the category name for all content items with a given old category.
-        /// </summary>
-        /// <param name="model">The update category view model containing old and new category names.</param>
-        /// <returns>A JSON result indicating success or failure.</returns>
         [HttpPost]
         public IActionResult UpdateCategory([FromBody] UpdateCategoryViewModel model)
         {
@@ -319,7 +173,7 @@ namespace TestKB.Controllers
                     return Json(new { success = false, message = "Eski veya yeni kategori ismi boş olamaz." });
                 }
 
-                var items = _contentService.GetContentItems();
+                var items = _contentService.GetContentItems(true);
                 var oldCat = model.OldCategory.Trim();
                 var newCat = model.NewCategory.Trim();
 
@@ -338,16 +192,11 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                LogError($"UpdateCategory action failed: {ex.Message}");
+                _logger.LogError(ex, "UpdateCategory action failed");
                 return Json(new { success = false, message = "Kategori güncellenirken bir hata oluştu." });
             }
         }
 
-        /// <summary>
-        /// Updates the subcategory name for content items under a specific category.
-        /// </summary>
-        /// <param name="model">The update subcategory view model containing category, old, and new subcategory names.</param>
-        /// <returns>A JSON result indicating success or failure.</returns>
         [HttpPost]
         public IActionResult UpdateSubCategory([FromBody] UpdateSubCategoryViewModel model)
         {
@@ -360,7 +209,7 @@ namespace TestKB.Controllers
                     return Json(new { success = false, message = "Kategori veya alt kategori bilgisi boş olamaz." });
                 }
 
-                var items = _contentService.GetContentItems();
+                var items = _contentService.GetContentItems(true);
                 var cat = model.Category.Trim();
                 var oldSub = model.OldSubCategory.Trim();
                 var newSub = model.NewSubCategory.Trim();
@@ -384,34 +233,63 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                LogError($"UpdateSubCategory action failed: {ex.Message}");
+                _logger.LogError(ex, "UpdateSubCategory action failed");
                 return Json(new { success = false, message = "Alt kategori güncellenirken bir hata oluştu." });
             }
         }
 
-        /// <summary>
-        /// Retrieves all content items as JSON.
-        /// </summary>
-        /// <returns>A JSON result containing all content items.</returns>
+        [HttpPost]
+        public IActionResult AddSubCategory([FromBody] AddSubCategoryViewModel model)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(model.Category) || string.IsNullOrWhiteSpace(model.NewSubCategory))
+                {
+                    return Json(new { success = false, message = "Kategori veya yeni alt kategori bilgisi boş olamaz." });
+                }
+
+                var items = _contentService.GetContentItems(true);
+                var category = model.Category.Trim();
+                var newSub = model.NewSubCategory.Trim();
+
+                if (SubcategoryExists(items, category, newSub))
+                {
+                    return Json(new { success = false, message = "Bu alt kategori zaten mevcut." });
+                }
+
+                // Add new entry with empty content for the new subcategory.
+                items.Add(new ContentItem
+                {
+                    Category = category,
+                    SubCategory = newSub,
+                    Content = ""
+                });
+
+                _contentService.UpdateContentItems(items);
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AddSubCategory action failed");
+                return Json(new { success = false, message = "Yeni alt kategori eklenirken bir hata oluştu." });
+            }
+        }
+
         [HttpGet]
         public IActionResult GetContentItems()
         {
             try
             {
-                var items = _contentService.GetContentItems();
+                var items = _contentService.GetContentItems(true);
                 return Json(items);
             }
             catch (Exception ex)
             {
-                LogError($"GetContentItems action failed: {ex.Message}");
+                _logger.LogError(ex, "GetContentItems action failed");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
 
-        /// <summary>
-        /// Converts the JSON data to plain text and renders it.
-        /// </summary>
-        /// <returns>The ConvertedContent view or a content result if the JSON file is missing.</returns>
         public IActionResult ConvertedContent()
         {
             try
@@ -428,26 +306,252 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                LogError($"ConvertedContent action failed: {ex.Message}");
+                _logger.LogError(ex, "ConvertedContent action failed");
                 return StatusCode(500, "An error occurred while processing your request.");
             }
         }
 
-        /// <summary>
-        /// Builds the view model used in the Edit view with current content data.
-        /// </summary>
-        /// <param name="newContent">The new content view model.</param>
-        /// <param name="extendContent">The extend content view model.</param>
-        /// <returns>An instance of EditContentViewModel.</returns>
-        private EditContentViewModel BuildEditContentViewModel(NewContentViewModel newContent, ExtendContentViewModel extendContent)
+        [HttpPost]
+        public IActionResult DeleteCategory([FromBody] DeleteCategoryViewModel model)
         {
-            var allItems = _contentService.GetContentItems();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(model.Category))
+                {
+                    return Json(new { success = false, message = "Kategori ismi boş olamaz." });
+                }
 
-            var categories = allItems
-                .Select(x => x.Category)
+                var items = _contentService.GetContentItems(true);
+                var categoryToDelete = model.Category.Trim();
+
+                int removedCount = items.RemoveAll(x =>
+                    x.Category.Equals(categoryToDelete, StringComparison.OrdinalIgnoreCase));
+
+                _contentService.UpdateContentItems(items);
+                return Json(new { success = true, message = $"{removedCount} içerik silindi." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeleteCategory action failed");
+                return Json(new { success = false, message = "Kategori silinirken bir hata oluştu." });
+            }
+        }
+
+        #region Helper Methods
+        private List<string> GetDistinctOrderedCategories(List<ContentItem> items)
+        {
+            return items
+                .Select(item => item.Category)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(x => x)
+                .OrderBy(c => c)
                 .ToList();
+        }
+
+        private List<ContentItem> FilterItemsByCategory(List<ContentItem> allItems, string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+            {
+                return allItems;
+            }
+
+            return allItems.Where(item =>
+                string.Equals(item.Category, category, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        private ExtendContentViewModel CreateExtendContentViewModel(
+            string selectedCategory,
+            string selectedSubCategory,
+            List<ContentItem> items)
+        {
+            var model = new ExtendContentViewModel();
+
+            if (!string.IsNullOrWhiteSpace(selectedCategory))
+            {
+                model.SelectedCategory = selectedCategory;
+            }
+
+            if (!string.IsNullOrWhiteSpace(selectedSubCategory))
+            {
+                model.SelectedSubCategory = selectedSubCategory;
+                var entry = items.FirstOrDefault(x =>
+                    x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase) &&
+                    x.SubCategory.Equals(selectedSubCategory, StringComparison.OrdinalIgnoreCase));
+
+                if (entry != null)
+                {
+                    model.Content = entry.Content;
+                }
+            }
+
+            return model;
+        }
+
+        private void ValidateNewContentModel(NewContentViewModel model, List<ContentItem> allItems)
+        {
+            if (CategoryExists(allItems, model.Category?.Trim()))
+            {
+                ModelState.AddModelError("NewContent.Category", "Bu kategori zaten mevcut!");
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.SubCategory) &&
+                SubcategoryExists(allItems, model.Category?.Trim(), model.SubCategory?.Trim()))
+            {
+                ModelState.AddModelError("NewContent.SubCategory", "Bu alt kategori zaten mevcut!");
+            }
+        }
+
+        private bool CategoryExists(List<ContentItem> items, string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                return false;
+
+            return items.Any(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool SubcategoryExists(List<ContentItem> items, string category, string subcategory)
+        {
+            if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subcategory))
+                return false;
+
+            return items.Any(x =>
+                x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
+                x.SubCategory.Equals(subcategory, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private string NormalizeSubcategorySelection(
+            ref string chosenSubCategory,
+            string newSubCat,
+            string chosenCategory,
+            List<ContentItem> items)
+        {
+            // If the "new" subcategory value is the same as the selected one, ignore it
+            if (!string.IsNullOrWhiteSpace(newSubCat) &&
+                !string.IsNullOrWhiteSpace(chosenSubCategory) &&
+                newSubCat.Equals(chosenSubCategory, StringComparison.OrdinalIgnoreCase))
+            {
+                return chosenSubCategory;
+            }
+
+            // Determine the actual subcategory to use
+            return !string.IsNullOrWhiteSpace(newSubCat) ? newSubCat : chosenSubCategory;
+        }
+
+        private void TryFindDefaultSubcategory(
+            List<ContentItem> items,
+            string chosenCategory,
+            ref string chosenSubCategory,
+            ref string actualSubCategory,
+            ExtendContentViewModel model)
+        {
+            var defaultSub = items
+                .FirstOrDefault(x => x.Category.Equals(chosenCategory, StringComparison.OrdinalIgnoreCase))
+                ?.SubCategory;
+
+            if (!string.IsNullOrWhiteSpace(defaultSub))
+            {
+                chosenSubCategory = defaultSub;
+                model.SelectedSubCategory = defaultSub;
+                actualSubCategory = defaultSub;
+            }
+            else
+            {
+                ModelState.AddModelError("ExtendContent.SelectedSubCategory",
+                    "Lütfen mevcut bir alt kategori seçiniz veya yeni bir alt kategori giriniz.");
+            }
+        }
+
+        private void ValidateNewSubcategory(string newSubCat, string chosenCategory, List<ContentItem> items)
+        {
+            if (string.IsNullOrWhiteSpace(newSubCat))
+                return;
+
+            if (SubcategoryExists(items, chosenCategory, newSubCat))
+            {
+                ModelState.AddModelError("ExtendContent.NewSubCategory", "Bu alt kategori zaten mevcut!");
+            }
+        }
+
+        private void LogModelStateErrors()
+        {
+            var errors = string.Join("; ", ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage));
+
+            _logger.LogWarning("ModelState validation errors: {Errors}", errors);
+        }
+
+        private bool ShouldRenameCategory(ExtendContentViewModel model, string chosenCategory)
+        {
+            return !string.IsNullOrWhiteSpace(model.EditedCategory) &&
+                   model.EditedCategory.Trim() != chosenCategory;
+        }
+
+        private string RenameCategoryInAllItems(List<ContentItem> items, string oldCategory, string newCategory)
+        {
+            foreach (var item in items.Where(x =>
+                x.Category.Equals(oldCategory, StringComparison.OrdinalIgnoreCase)))
+            {
+                item.Category = newCategory;
+            }
+
+            return newCategory;
+        }
+
+        private bool ShouldRenameSubcategory(ExtendContentViewModel model, string chosenSubCategory)
+        {
+            return !string.IsNullOrWhiteSpace(model.EditedSubCategory) &&
+                   model.EditedSubCategory.Trim() != chosenSubCategory;
+        }
+
+        private string RenameSubcategoryInItems(
+            List<ContentItem> items,
+            string category,
+            string oldSubCategory,
+            string newSubCategory)
+        {
+            foreach (var item in items.Where(x =>
+                x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
+                x.SubCategory.Equals(oldSubCategory, StringComparison.OrdinalIgnoreCase)))
+            {
+                item.SubCategory = newSubCategory;
+            }
+
+            return newSubCategory;
+        }
+
+        private void UpdateOrCreateContentItem(
+            List<ContentItem> items,
+            string category,
+            string subcategory,
+            string content)
+        {
+            var existingEntry = items.FirstOrDefault(x =>
+                x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
+                x.SubCategory.Equals(subcategory, StringComparison.OrdinalIgnoreCase));
+
+            if (existingEntry != null)
+            {
+                existingEntry.Content = content;
+            }
+            else
+            {
+                items.Add(new ContentItem
+                {
+                    Category = category,
+                    SubCategory = subcategory,
+                    Content = content
+                });
+            }
+        }
+
+        private EditContentViewModel BuildEditContentViewModel(
+            NewContentViewModel newContent,
+            ExtendContentViewModel extendContent)
+        {
+            var allItems = _contentService.GetContentItems(true);
+
+            var categories = GetDistinctOrderedCategories(allItems);
 
             var subCategories = allItems
                 .GroupBy(x => x.Category)
@@ -467,60 +571,6 @@ namespace TestKB.Controllers
                 ExtendContent = extendContent
             };
         }
-
-        /// <summary>
-        /// Adds a JSON representation of all content items to the view model via ViewBag.
-        /// </summary>
-        /// <param name="vm">The edit content view model.</param>
-        /// <returns>The updated view model.</returns>
-        private EditContentViewModel AddAllItemsJson(EditContentViewModel vm)
-        {
-            var allItems = _contentService.GetContentItems();
-            ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
-            return vm;
-        }
-
-        /// <summary>
-        /// Deletes all content items under a specified category.
-        /// </summary>
-        /// <param name="model">The view model containing the category to delete.</param>
-        /// <returns>A JSON result indicating how many items were removed.</returns>
-        [HttpPost]
-        public IActionResult DeleteCategory([FromBody] DeleteCategoryViewModel model)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(model.Category))
-                {
-                    return Json(new { success = false, message = "Kategori ismi boş olamaz." });
-                }
-
-                var items = _contentService.GetContentItems();
-                var categoryToDelete = model.Category.Trim();
-
-                int removedCount = items.RemoveAll(x =>
-                    x.Category.Equals(categoryToDelete, StringComparison.OrdinalIgnoreCase));
-
-                _contentService.UpdateContentItems(items);
-                return Json(new { success = true, message = $"{removedCount} içerik silindi." });
-            }
-            catch (Exception ex)
-            {
-                LogError($"DeleteCategory action failed: {ex.Message}");
-                return Json(new { success = false, message = "Kategori silinirken bir hata oluştu." });
-            }
-        }
-
-        /// <summary>
-        /// Logs error messages to the error output.
-        /// </summary>
-        /// <param name="message">The error message to log.</param>
-        private void LogError(string message)
-        {
-            lock (_logLock)
-            {
-                Console.Error.WriteLine($"[ERROR] {DateTime.UtcNow}: {message}");
-            }
-        }
+        #endregion
     }
 }

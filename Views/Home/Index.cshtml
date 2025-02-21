@@ -5,27 +5,34 @@
     var selectedCategory = Model.SelectedCategory;
 }
 
-<div class="container mt-4">
-    <!-- Filter Form -->
-    <form asp-controller="Home" method="get" asp-action="Index" class="mb-4">
-        <div class="form-row align-items-end">
-            <div class="col-md-4">
-                <label for="categoryFilter">Kategori Seç</label>
-                <select id="categoryFilter" name="category" class="form-control">
-                    <option value="">Tüm Kategoriler</option>
-                    @foreach (var category in Model.AllCategories)
-                    {
-                        <option value="@category" selected="@(string.Equals(category, selectedCategory, StringComparison.OrdinalIgnoreCase))">
-                            @category
-                        </option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-block">Filtrele</button>
-            </div>
+<!-- Use a fluid container to span full width -->
+<div class="container-fluid mt-4">
+    <!-- Centered Filter Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form asp-controller="Home" method="get" asp-action="Index" class="mb-4">
+                <div class="form-row align-items-end">
+                    <div class="col-md-8">
+                        <label for="categoryFilter">Kategori Seç</label>
+                        <select id="categoryFilter" name="category" class="form-control">
+                            <option value="">Tüm Kategoriler</option>
+                            @foreach (var category in Model.AllCategories)
+                            {
+                                var selectedAttr = string.Equals(category, selectedCategory, StringComparison.OrdinalIgnoreCase)
+                                ? "selected"
+                                : "";
+                                @Html.Raw($"<option value='{category}' {selectedAttr}>{category}</option>")
+                                ;
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary btn-block">Filtrele</button>
+                    </div>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     <!-- Display Content Items as Bootstrap Cards -->
     <div class="row">

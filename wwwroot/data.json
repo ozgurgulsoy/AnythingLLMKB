@@ -173,5 +173,10 @@
     "Category": "Ağ Mimarileri",
     "SubCategory": "Bulut Bilişim Mimarisi",
     "Content": "Bulut bilişim mimarisi, kaynakların (sunucular, depolama, yazılım) internet üzerinden sunulduğu bir yapıdır. Kullanıcılar, bu kaynaklara istedikleri zaman ve yerden erişebilirler."
+  },
+  {
+    "Category": "Test",
+    "SubCategory": "Test",
+    "Content": "Test"
   }
 ]
