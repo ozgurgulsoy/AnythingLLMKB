@@ -1,23 +1,33 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     // Global değişkenler
+    // Bu değişkenler, seçilen kategori/alt kategori ve JSON'dan çekilen içerikleri saklar.
     var oldCategoryValue = "";
     var oldSubCategoryValue = "";
     var allItems = allItemsJsonData;
 
-    // Sayfada kullanılan öğeler
+    // DOM öğelerinin referansları
     var categorySelect = document.getElementById('selectedCategory');
     var subCategorySelect = document.getElementById('selectedSubCategory');
     var extendContentBox = document.getElementById('extendContent');
     var subCategoryContainer = document.getElementById('subCategoryContainer');
 
-    // Kullanıcının seçili alt kategorisini saklamak için gizli input
+    // Kullanıcının aktif olarak seçtiği alt kategoriyi tutan gizli input
     var hiddenSelectedSubCategory = document.getElementById('hiddenSelectedSubCategory');
 
+    /**
+     * Belirli bir öğenin içine hata mesajı koyar.
+     * @param {string} elementId - Hata mesajının yazılacağı elementin ID'si
+     * @param {string} message - Gösterilecek hata metni
+     */
     function setErrorText(elementId, message) {
         document.getElementById(elementId).textContent = message;
     }
     window.setErrorText = setErrorText;
 
+    /**
+     * Sunucudan içerik öğelerini yeniden çeker.
+     * @param {Function} [callback] - Veriler yüklendikten sonra çağrılacak fonksiyon
+     */
     function refreshAllItems(callback) {
         fetch('/Home/GetContentItems')
             .then(res => res.json())
@@ -29,21 +39,29 @@
     }
     window.refreshAllItems = refreshAllItems;
 
+    /**
+     * Kategori seçildiğinde çağrılır.
+     * Kategoriye göre alt kategori alanını ve diğer ilgili alanları ayarlar.
+     */
     window.onCategoryChange = function () {
         setErrorText('editCategoryError', '');
         oldCategoryValue = categorySelect.value;
 
-        // Yeni kategori seçilince gizli alt kategori değeri temizlenir
+        // Farklı bir kategori seçilince alt kategori seçim bilgisini sıfırla.
         hiddenSelectedSubCategory.value = "";
 
+        // Alt kategori alanını açar/kapatır
         subCategoryContainer.style.display = categorySelect.value ? 'block' : 'none';
+
+        // Sunucudan tekrar içerik yükleyip alt kategorileri yeniler
         refreshAllItems(function () {
+            // "Kategoriyi Düzenle" butonunu, sadece geçerli bir kategori varsa göster
             document.getElementById('editCategoryBtn').style.display =
                 categorySelect.value ? 'block' : 'none';
 
             populateSubCategories(categorySelect.value);
 
-            // Alt kategori seçimi sıfırlanır
+            // Alt kategori seçimini temizler
             subCategorySelect.value = "";
             document.getElementById('editSubCategoryBtn').style.display = 'none';
             document.getElementById('contentDiv').style.display = 'none';
@@ -51,8 +69,12 @@
         });
     };
 
+    /**
+     * Kategori düzenleme alanını açıp kapatır.
+     */
     window.toggleEditCategory = function () {
         var editDiv = document.getElementById('editCategoryDiv');
+        // Kategori düzenleme alanı gizliyse açar, açıksa kapatır
         if (!editDiv.style.display || editDiv.style.display === 'none') {
             document.getElementById('editedCategory').value = categorySelect.value;
             editDiv.style.display = 'block';
@@ -61,6 +83,9 @@
         }
     };
 
+    /**
+     * Kategoriyi kaydetmek için çağrılır. Kullanıcı yeni kategori adını girdikten sonra "Kaydet" basar.
+     */
     window.saveEditedCategory = function () {
         setErrorText('editCategoryError', '');
         var newCategory = document.getElementById('editedCategory').value.trim();
@@ -68,6 +93,7 @@
             setErrorText('editCategoryError', "Kategori ismi boş olamaz.");
             return;
         }
+        // Seçili option'ı günceller
         for (var i = 0; i < categorySelect.options.length; i++) {
             if (categorySelect.options[i].value === categorySelect.value) {
                 categorySelect.options[i].text = newCategory;
@@ -75,9 +101,11 @@
                 break;
             }
         }
+        // Kategori select değerini yeni isimle günceller
         categorySelect.value = newCategory;
         document.getElementById('editCategoryDiv').style.display = 'none';
 
+        // Sunucuya kategori değişikliği bilgisini gönderir
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
         fetch('/Home/UpdateCategory', {
             method: 'POST',
@@ -93,6 +121,7 @@
                     setErrorText('editCategoryError', data.message || "Kategori güncelleme hatası.");
                 } else {
                     oldCategoryValue = newCategory;
+                    // Kategoriler güncellendikten sonra tekrar alt kategorileri çek
                     refreshAllItems(function () {
                         populateSubCategories(newCategory);
                     });
@@ -103,12 +132,18 @@
             });
     };
 
+    /**
+     * Belirli bir kategori için alt kategori seçeneklerini doldurur.
+     * @param {string} category - Seçili kategori
+     */
     window.populateSubCategories = function (category) {
+        // "Alt kategori seçiniz" opsiyonu hariç mevcut opsiyonları temizler
         while (subCategorySelect.options.length > 1) {
             subCategorySelect.remove(1);
         }
         if (!category) return;
 
+        // Seçilen kategoriye ait alt kategorileri bulur
         var subcats = new Set();
         allItems.forEach(function (item) {
             if (item.category && item.category.trim().toLowerCase() === category.trim().toLowerCase()) {
@@ -116,6 +151,7 @@
             }
         });
 
+        // Bulunan alt kategorileri sırala ve select'e ekle
         var subcatArr = Array.from(subcats).sort();
         subcatArr.forEach(function (subcat) {
             var opt = document.createElement('option');
@@ -125,13 +161,18 @@
         });
     };
 
+    /**
+     * Alt kategori değiştiğinde çağrılır.
+     * İçeriği getirir ve sayfada gösterir.
+     */
     window.onSubCategoryChange = function () {
         setErrorText('editSubCategoryError', '');
         oldSubCategoryValue = subCategorySelect.value;
 
-        // Seçili alt kategori gizli input'a yazılır
+        // Kullanıcının yeni seçtiği alt kategoriyi gizli input'a yazar
         hiddenSelectedSubCategory.value = subCategorySelect.value;
 
+        // Eğer alt kategori seçildiyse ilgili alanları görünür yap, aksi halde gizle
         if (subCategorySelect.value) {
             document.getElementById('editSubCategoryBtn').style.display = 'block';
             var matches = allItems.filter(function (item) {
@@ -148,9 +189,13 @@
         }
     };
 
+    /**
+     * Alt kategori düzenleme alanını açıp kapatır.
+     */
     window.toggleEditSubCategory = function () {
         var editDiv = document.getElementById('editSubCategoryDiv');
         if (!editDiv.style.display || editDiv.style.display === 'none') {
+            // Alt kategori düzenleme girişine mevcut alt kategori değerini yaz
             document.getElementById('editedSubCategory').value = subCategorySelect.value;
             editDiv.style.display = 'block';
         } else {
@@ -158,6 +203,9 @@
         }
     };
 
+    /**
+     * Alt kategori adını kaydeder. Kullanıcı "Kaydet"e bastığında çağrılır.
+     */
     window.saveEditedSubCategory = function () {
         setErrorText('editSubCategoryError', '');
         var newSubCategory = document.getElementById('editedSubCategory').value.trim();
@@ -165,6 +213,7 @@
             setErrorText('editSubCategoryError', "Alt kategori ismi boş olamaz.");
             return;
         }
+        // Mevcut seçili alt kategoriyi UI'da günceller
         for (var i = 0; i < subCategorySelect.options.length; i++) {
             if (subCategorySelect.options[i].value === subCategorySelect.value) {
                 subCategorySelect.options[i].text = newSubCategory;
@@ -175,6 +224,7 @@
         subCategorySelect.value = newSubCategory;
         document.getElementById('editSubCategoryDiv').style.display = 'none';
 
+        // Sunucuya alt kategori güncelleme isteği gönder
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
         fetch('/Home/UpdateSubCategory', {
             method: 'POST',
@@ -205,6 +255,9 @@
             });
     };
 
+    /**
+     * Yeni alt kategori ekleme alanını açıp kapatır.
+     */
     window.toggleAddSubCategory = function () {
         var addDiv = document.getElementById('addSubCategoryDiv');
         addDiv.style.display = (!addDiv.style.display || addDiv.style.display === 'none')
@@ -212,6 +265,9 @@
         document.getElementById('editSubCategoryDiv').style.display = 'none';
     };
 
+    /**
+     * Yeni alt kategori bilgisini kaydeder. Kullanıcı "Ekle" butonuna bastığında çağrılır.
+     */
     window.saveNewSubCategory = function () {
         var newSubCatInput = document.getElementById('newSubCategoryInput');
         var newSubCatValue = newSubCatInput.value.trim();
@@ -219,6 +275,7 @@
             setErrorText('editSubCategoryError', "Yeni alt kategori ismi boş olamaz.");
             return;
         }
+        // Var olan alt kategori listesinde aynı isim varsa eklemeye izin verme
         var exists = false;
         for (var i = 0; i < subCategorySelect.options.length; i++) {
             if (subCategorySelect.options[i].value.trim().toLowerCase() === newSubCatValue.toLowerCase()) {
@@ -230,6 +287,7 @@
             setErrorText('editSubCategoryError', "Bu alt kategori zaten mevcut.");
             return;
         }
+        // Sunucuya yeni alt kategori ekleme isteği gönder
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
         fetch('/Home/AddSubCategory', {
             method: 'POST',
@@ -247,11 +305,14 @@
                 if (!data.success) {
                     setErrorText('editSubCategoryError', data.message || "Yeni alt kategori eklenirken hata oluştu.");
                 } else {
+                    // Yeni alt kategoriyi <select>'e ekle
                     var newOption = document.createElement('option');
                     newOption.value = newSubCatValue;
                     newOption.textContent = newSubCatValue;
                     subCategorySelect.appendChild(newOption);
                     subCategorySelect.value = newSubCatValue;
+
+                    // Seçili alt kategori olarak güncelle
                     hiddenSelectedSubCategory.value = newSubCatValue;
 
                     refreshAllItems(function () {
@@ -267,6 +328,9 @@
             });
     };
 
+    /**
+     * Kategori silme işlemine başlamak için kullanıcıdan onay ister.
+     */
     window.confirmDeleteCategory = function () {
         setErrorText('deleteCategoryError', '');
         var category = document.getElementById('deleteCategorySelect').value;
@@ -277,15 +341,22 @@
         document.getElementById('inlineDeleteConfirm').style.display = 'block';
     };
 
+    /**
+     * Kategori silme onay penceresini iptal eder.
+     */
     window.cancelDelete = function () {
         document.getElementById('inlineDeleteConfirm').style.display = 'none';
     };
 
+    /**
+     * Kategori silme işlemini sunucuya bildirir.
+     */
     window.deleteCategory = function () {
         var select = document.getElementById('deleteCategorySelect');
         var category = select.value;
         document.getElementById('inlineDeleteConfirm').style.display = 'none';
         setErrorText('deleteCategoryError', '');
+
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
         fetch('/Home/DeleteCategory', {
             method: 'POST',
@@ -300,6 +371,7 @@
                 if (!data.success) {
                     setErrorText('deleteCategoryError', data.message || "Kategori silinirken hata oluştu.");
                 } else {
+                    // Başarılı silme sonrası kullanıcıya mesaj gösterip sayfayı yenile
                     var alertDiv = document.createElement('div');
                     alertDiv.className = "alert alert-success alert-dismissible fade show";
                     alertDiv.role = "alert";
@@ -317,12 +389,13 @@
             });
     };
 
-    // Sayfa ilk yüklendiğinde seçili bir kategori varsa alt kategorileri getirir
+    // Sayfa ilk yüklendiğinde, eğer seçili bir kategori varsa alt kategorileri doldur.
     if (categorySelect && categorySelect.value) {
         refreshAllItems(function () {
             subCategoryContainer.style.display = 'block';
             populateSubCategories(categorySelect.value);
 
+            // Daha önce seçili olan alt kategori varsa onu tekrar seç
             var preselectedSub = hiddenSelectedSubCategory.value;
             if (preselectedSub) {
                 subCategorySelect.value = preselectedSub;
@@ -331,15 +404,19 @@
         });
     }
 
-    // Sekmeler arası geçişte alt kategorileri yeniler
+    /**
+     * Sekmeler arası geçiş yapıldığında ilgili öğeleri yeniden yükler.
+     */
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
+        // "Var Olan İçeriği Düzenle" sekmesine geçiliyorsa
         if (target === "#extendContentSection") {
             if (categorySelect && categorySelect.value) {
                 refreshAllItems(function () {
                     subCategoryContainer.style.display = 'block';
                     populateSubCategories(categorySelect.value);
 
+                    // Önceden seçilmiş alt kategori varsa onu seçip onSubCategoryChange çağır
                     var preselectedSub = hiddenSelectedSubCategory.value;
                     if (preselectedSub) {
                         subCategorySelect.value = preselectedSub;
