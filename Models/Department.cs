@@ -3,7 +3,7 @@
     public enum Department
     {
         Yazılım,
-        MH,
+        Mh,
         Pazarlama,
         Proje
     }

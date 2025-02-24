@@ -1,14 +1,17 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
-    // Global variables
+    // Global değişkenler
     var oldCategoryValue = "";
     var oldSubCategoryValue = "";
-    var allItems = allItemsJsonData; // Injected from the view
+    var allItems = allItemsJsonData;
 
-    // Cache DOM elements
+    // Sayfada kullanılan öğeler
     var categorySelect = document.getElementById('selectedCategory');
     var subCategorySelect = document.getElementById('selectedSubCategory');
     var extendContentBox = document.getElementById('extendContent');
     var subCategoryContainer = document.getElementById('subCategoryContainer');
+
+    // Kullanıcının seçili alt kategorisini saklamak için gizli input
+    var hiddenSelectedSubCategory = document.getElementById('hiddenSelectedSubCategory');
 
     function setErrorText(elementId, message) {
         document.getElementById(elementId).textContent = message;
@@ -29,10 +32,18 @@
     window.onCategoryChange = function () {
         setErrorText('editCategoryError', '');
         oldCategoryValue = categorySelect.value;
+
+        // Yeni kategori seçilince gizli alt kategori değeri temizlenir
+        hiddenSelectedSubCategory.value = "";
+
         subCategoryContainer.style.display = categorySelect.value ? 'block' : 'none';
         refreshAllItems(function () {
-            document.getElementById('editCategoryBtn').style.display = categorySelect.value ? 'block' : 'none';
+            document.getElementById('editCategoryBtn').style.display =
+                categorySelect.value ? 'block' : 'none';
+
             populateSubCategories(categorySelect.value);
+
+            // Alt kategori seçimi sıfırlanır
             subCategorySelect.value = "";
             document.getElementById('editSubCategoryBtn').style.display = 'none';
             document.getElementById('contentDiv').style.display = 'none';
@@ -66,6 +77,7 @@
         }
         categorySelect.value = newCategory;
         document.getElementById('editCategoryDiv').style.display = 'none';
+
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
         fetch('/Home/UpdateCategory', {
             method: 'POST',
@@ -91,17 +103,19 @@
             });
     };
 
-    function populateSubCategories(category) {
+    window.populateSubCategories = function (category) {
         while (subCategorySelect.options.length > 1) {
             subCategorySelect.remove(1);
         }
         if (!category) return;
+
         var subcats = new Set();
         allItems.forEach(function (item) {
             if (item.category && item.category.trim().toLowerCase() === category.trim().toLowerCase()) {
                 subcats.add(item.subCategory ? item.subCategory.trim() : "");
             }
         });
+
         var subcatArr = Array.from(subcats).sort();
         subcatArr.forEach(function (subcat) {
             var opt = document.createElement('option');
@@ -109,12 +123,15 @@
             opt.textContent = subcat;
             subCategorySelect.appendChild(opt);
         });
-    }
-    window.populateSubCategories = populateSubCategories;
+    };
 
     window.onSubCategoryChange = function () {
         setErrorText('editSubCategoryError', '');
         oldSubCategoryValue = subCategorySelect.value;
+
+        // Seçili alt kategori gizli input'a yazılır
+        hiddenSelectedSubCategory.value = subCategorySelect.value;
+
         if (subCategorySelect.value) {
             document.getElementById('editSubCategoryBtn').style.display = 'block';
             var matches = allItems.filter(function (item) {
@@ -157,6 +174,7 @@
         }
         subCategorySelect.value = newSubCategory;
         document.getElementById('editSubCategoryDiv').style.display = 'none';
+
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
         fetch('/Home/UpdateSubCategory', {
             method: 'POST',
@@ -175,6 +193,7 @@
                 if (!data.success) {
                     setErrorText('editSubCategoryError', data.message || "Alt kategori güncelleme hatası.");
                 } else {
+                    hiddenSelectedSubCategory.value = newSubCategory;
                     oldSubCategoryValue = newSubCategory;
                     refreshAllItems(function () {
                         populateSubCategories(categorySelect.value);
@@ -188,7 +207,8 @@
 
     window.toggleAddSubCategory = function () {
         var addDiv = document.getElementById('addSubCategoryDiv');
-        addDiv.style.display = (!addDiv.style.display || addDiv.style.display === 'none') ? 'block' : 'none';
+        addDiv.style.display = (!addDiv.style.display || addDiv.style.display === 'none')
+            ? 'block' : 'none';
         document.getElementById('editSubCategoryDiv').style.display = 'none';
     };
 
@@ -232,11 +252,14 @@
                     newOption.textContent = newSubCatValue;
                     subCategorySelect.appendChild(newOption);
                     subCategorySelect.value = newSubCatValue;
+                    hiddenSelectedSubCategory.value = newSubCatValue;
+
                     refreshAllItems(function () {
                         populateSubCategories(categorySelect.value);
                         onSubCategoryChange();
                     });
                     document.getElementById('addSubCategoryDiv').style.display = 'none';
+                    newSubCatInput.value = "";
                 }
             })
             .catch(error => {
@@ -294,12 +317,13 @@
             });
     };
 
-    // On page load, if a category is already selected, refresh and populate subcategories.
+    // Sayfa ilk yüklendiğinde seçili bir kategori varsa alt kategorileri getirir
     if (categorySelect && categorySelect.value) {
         refreshAllItems(function () {
             subCategoryContainer.style.display = 'block';
             populateSubCategories(categorySelect.value);
-            var preselectedSub = "@Model.ExtendContent.SelectedSubCategory";
+
+            var preselectedSub = hiddenSelectedSubCategory.value;
             if (preselectedSub) {
                 subCategorySelect.value = preselectedSub;
                 onSubCategoryChange();
@@ -307,7 +331,7 @@
         });
     }
 
-    // Listen for Bootstrap tab show events to refresh subcategories when the edit tab is activated.
+    // Sekmeler arası geçişte alt kategorileri yeniler
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         var target = $(e.target).attr("href");
         if (target === "#extendContentSection") {
@@ -315,7 +339,8 @@
                 refreshAllItems(function () {
                     subCategoryContainer.style.display = 'block';
                     populateSubCategories(categorySelect.value);
-                    var preselectedSub = "@Model.ExtendContent.SelectedSubCategory";
+
+                    var preselectedSub = hiddenSelectedSubCategory.value;
                     if (preselectedSub) {
                         subCategorySelect.value = preselectedSub;
                         onSubCategoryChange();

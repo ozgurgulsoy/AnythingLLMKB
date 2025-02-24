@@ -1,40 +1,35 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
 using System.Text.Json;
 using TestKB.Models;
 using TestKB.Services;
 using TestKB.ViewModels;
 
-
 namespace TestKB.Controllers
 {
-    public class HomeController : Controller
+    // Bu denetleyici, içerik ekleme, güncelleme, silme ve görüntüleme işlemlerini yönetir.
+    public class HomeController(IContentService contentService, IWebHostEnvironment env, ILogger<HomeController> logger)
+        : Controller
     {
-        private readonly IContentService _contentService;
-        private readonly IWebHostEnvironment _env;
-        private readonly ILogger<HomeController> _logger;
+        // İçerik servislerinin kullanımı için alanlar.
+        private readonly IContentService _contentService = contentService ?? throw new ArgumentNullException(nameof(contentService));
+        private readonly IWebHostEnvironment _env = env ?? throw new ArgumentNullException(nameof(env));
+        private readonly ILogger<HomeController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        public HomeController(IContentService contentService, IWebHostEnvironment env, ILogger<HomeController> logger)
-        {
-            _contentService = contentService ?? throw new ArgumentNullException(nameof(contentService));
-            _env = env ?? throw new ArgumentNullException(nameof(env));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
+        // Departman seçimi için kullanılan basit bir görünüm.
         public IActionResult DepartmentSelect() => View();
 
+        // Departman seçimi sonrası yönlendirme işlemi.
         [HttpPost]
         public IActionResult SelectDepartment(Department department) =>
             RedirectToAction("Index", new { dept = department });
 
+        // Ana sayfa, seçilen kategorinin içeriklerini filtreleyerek gösterir.
         public IActionResult Index(string category, Department? dept)
         {
             try
             {
-                List<ContentItem> allItems = _contentService.GetContentItems(true);
-
+                var allItems = _contentService.GetContentItems(true);
                 var allCategories = GetDistinctOrderedCategories(allItems);
-
                 var filteredItems = FilterItemsByCategory(allItems, category);
 
                 var viewModel = new ContentListViewModel
@@ -48,11 +43,12 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Index action failed");
-                return StatusCode(500, "An error occurred while processing your request.");
+                _logger.LogError(ex, "Index işleminde hata oluştu");
+                return StatusCode(500, "Bir hata oluştu.");
             }
         }
 
+        // İçerik düzenleme sayfası, isteğe bağlı olarak seçili kategori ve alt kategoriyle gelir.
         [HttpGet]
         public IActionResult Edit(string selectedCategory, string selectedSubCategory)
         {
@@ -67,18 +63,18 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Edit GET action failed");
-                return StatusCode(500, "An error occurred while processing your request.");
+                _logger.LogError(ex, "Edit sayfası yüklenirken hata oluştu");
+                return StatusCode(500, "Bir hata oluştu.");
             }
         }
 
+        // Yeni içerik ekleme işlemi.
         [HttpPost]
         public IActionResult EditNewContent([Bind(Prefix = "NewContent")] NewContentViewModel model)
         {
             try
             {
                 var allItems = _contentService.GetContentItems(true);
-
                 ValidateNewContentModel(model, allItems);
 
                 if (ModelState.IsValid)
@@ -94,18 +90,19 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "EditNewContent action failed");
-                return StatusCode(500, "An error occurred while processing your request.");
+                _logger.LogError(ex, "Yeni içerik eklenirken hata oluştu");
+                return StatusCode(500, "Bir hata oluştu.");
             }
         }
 
+        // Var olan içeriği düzenleme veya güncelleme işlemi.
         [HttpPost]
         public IActionResult ExtendContent([Bind(Prefix = "ExtendContent")] ExtendContentViewModel model)
         {
             try
             {
-                _logger.LogDebug("ExtendContent params: Category={Category}, SubCategory={SubCategory}, NewSubCategory={NewSubCategory}",
-                                model.SelectedCategory, model.SelectedSubCategory, model.NewSubCategory);
+                _logger.LogDebug("ExtendContent parametreleri: Category={Category}, SubCategory={SubCategory}, NewSubCategory={NewSubCategory}",
+                                 model.SelectedCategory, model.SelectedSubCategory, model.NewSubCategory);
 
                 if (string.IsNullOrWhiteSpace(model.Content))
                 {
@@ -117,17 +114,12 @@ namespace TestKB.Controllers
                 var chosenSubCategory = model.SelectedSubCategory?.Trim();
                 var newSubCat = model.NewSubCategory?.Trim();
 
-                // Normalize input data
                 var actualSubCategory = NormalizeSubcategorySelection(ref chosenSubCategory, newSubCat, chosenCategory, items);
 
-                // Validate subcategory selection
                 if (string.IsNullOrWhiteSpace(chosenSubCategory) && string.IsNullOrWhiteSpace(newSubCat))
                 {
                     TryFindDefaultSubcategory(items, chosenCategory, ref chosenSubCategory, ref actualSubCategory, model);
                 }
-
-                // Validate new subcategory for duplicates
-                ValidateNewSubcategory(newSubCat, chosenCategory, items);
 
                 if (!ModelState.IsValid)
                 {
@@ -137,13 +129,11 @@ namespace TestKB.Controllers
                     return View("Edit", vm);
                 }
 
-                // Handle category rename if needed
                 if (ShouldRenameCategory(model, chosenCategory))
                 {
                     chosenCategory = RenameCategoryInAllItems(items, chosenCategory, model.EditedCategory.Trim());
                 }
 
-                // Handle subcategory rename if needed
                 if (ShouldRenameSubcategory(model, chosenSubCategory))
                 {
                     actualSubCategory = RenameSubcategoryInItems(items, chosenCategory, chosenSubCategory, model.EditedSubCategory.Trim());
@@ -151,18 +141,18 @@ namespace TestKB.Controllers
                 }
 
                 UpdateOrCreateContentItem(items, chosenCategory, actualSubCategory, model.Content?.Trim());
-
                 _contentService.UpdateContentItems(items);
                 TempData["SuccessMessage"] = "İçerik güncellendi.";
                 return RedirectToAction("Edit");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ExtendContent action failed");
-                return StatusCode(500, "An error occurred while processing your request.");
+                _logger.LogError(ex, "İçerik güncellenirken hata oluştu");
+                return StatusCode(500, "Bir hata oluştu.");
             }
         }
 
+        // Kategori güncelleme işlemi.
         [HttpPost]
         public IActionResult UpdateCategory([FromBody] UpdateCategoryViewModel model)
         {
@@ -192,11 +182,12 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdateCategory action failed");
+                _logger.LogError(ex, "Kategori güncellenirken hata oluştu");
                 return Json(new { success = false, message = "Kategori güncellenirken bir hata oluştu." });
             }
         }
 
+        // Alt kategori güncelleme işlemi.
         [HttpPost]
         public IActionResult UpdateSubCategory([FromBody] UpdateSubCategoryViewModel model)
         {
@@ -233,11 +224,12 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdateSubCategory action failed");
+                _logger.LogError(ex, "Alt kategori güncellenirken hata oluştu");
                 return Json(new { success = false, message = "Alt kategori güncellenirken bir hata oluştu." });
             }
         }
 
+        // Yeni alt kategori ekleme işlemi.
         [HttpPost]
         public IActionResult AddSubCategory([FromBody] AddSubCategoryViewModel model)
         {
@@ -257,7 +249,6 @@ namespace TestKB.Controllers
                     return Json(new { success = false, message = "Bu alt kategori zaten mevcut." });
                 }
 
-                // Add new entry with empty content for the new subcategory.
                 items.Add(new ContentItem
                 {
                     Category = category,
@@ -270,11 +261,12 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "AddSubCategory action failed");
+                _logger.LogError(ex, "Yeni alt kategori eklenirken hata oluştu");
                 return Json(new { success = false, message = "Yeni alt kategori eklenirken bir hata oluştu." });
             }
         }
 
+        // Tüm içerikleri JSON olarak döndürür.
         [HttpGet]
         public IActionResult GetContentItems()
         {
@@ -285,11 +277,12 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "GetContentItems action failed");
-                return StatusCode(500, "An error occurred while processing your request.");
+                _logger.LogError(ex, "GetContentItems işleminde hata oluştu");
+                return StatusCode(500, "Bir hata oluştu.");
             }
         }
 
+        // JSON veriyi dönüştürür.
         public IActionResult ConvertedContent()
         {
             try
@@ -306,11 +299,12 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ConvertedContent action failed");
-                return StatusCode(500, "An error occurred while processing your request.");
+                _logger.LogError(ex, "ConvertedContent işleminde hata oluştu");
+                return StatusCode(500, "Bir hata oluştu.");
             }
         }
 
+        // Kategori silme işlemi.
         [HttpPost]
         public IActionResult DeleteCategory([FromBody] DeleteCategoryViewModel model)
         {
@@ -332,12 +326,13 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "DeleteCategory action failed");
+                _logger.LogError(ex, "Kategori silinirken hata oluştu");
                 return Json(new { success = false, message = "Kategori silinirken bir hata oluştu." });
             }
         }
 
-        #region Helper Methods
+        #region Yardımcı Metotlar
+        // Kategorileri benzersiz ve sıralı şekilde döndürür.
         private List<string> GetDistinctOrderedCategories(List<ContentItem> items)
         {
             return items
@@ -347,6 +342,7 @@ namespace TestKB.Controllers
                 .ToList();
         }
 
+        // Seçili kategoriye göre içerikleri filtreler.
         private List<ContentItem> FilterItemsByCategory(List<ContentItem> allItems, string category)
         {
             if (string.IsNullOrWhiteSpace(category))
@@ -359,6 +355,7 @@ namespace TestKB.Controllers
                 .ToList();
         }
 
+        // Düzenleme için seçilen kategori ve alt kategoriye uygun modeli oluşturur.
         private ExtendContentViewModel CreateExtendContentViewModel(
             string selectedCategory,
             string selectedSubCategory,
@@ -387,6 +384,7 @@ namespace TestKB.Controllers
             return model;
         }
 
+        // Yeni eklenecek içeriği doğrular.
         private void ValidateNewContentModel(NewContentViewModel model, List<ContentItem> allItems)
         {
             if (CategoryExists(allItems, model.Category?.Trim()))
@@ -401,6 +399,7 @@ namespace TestKB.Controllers
             }
         }
 
+        // Kategori var mı kontrol eder.
         private bool CategoryExists(List<ContentItem> items, string category)
         {
             if (string.IsNullOrWhiteSpace(category))
@@ -409,6 +408,7 @@ namespace TestKB.Controllers
             return items.Any(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
         }
 
+        // Alt kategori var mı kontrol eder.
         private bool SubcategoryExists(List<ContentItem> items, string category, string subcategory)
         {
             if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subcategory))
@@ -419,13 +419,13 @@ namespace TestKB.Controllers
                 x.SubCategory.Equals(subcategory, StringComparison.OrdinalIgnoreCase));
         }
 
+        // Alt kategori seçimini normalleştirir.
         private string NormalizeSubcategorySelection(
             ref string chosenSubCategory,
             string newSubCat,
             string chosenCategory,
             List<ContentItem> items)
         {
-            // If the "new" subcategory value is the same as the selected one, ignore it
             if (!string.IsNullOrWhiteSpace(newSubCat) &&
                 !string.IsNullOrWhiteSpace(chosenSubCategory) &&
                 newSubCat.Equals(chosenSubCategory, StringComparison.OrdinalIgnoreCase))
@@ -433,10 +433,10 @@ namespace TestKB.Controllers
                 return chosenSubCategory;
             }
 
-            // Determine the actual subcategory to use
             return !string.IsNullOrWhiteSpace(newSubCat) ? newSubCat : chosenSubCategory;
         }
 
+        // Varsayılan alt kategori bulmaya çalışır.
         private void TryFindDefaultSubcategory(
             List<ContentItem> items,
             string chosenCategory,
@@ -461,32 +461,24 @@ namespace TestKB.Controllers
             }
         }
 
-        private void ValidateNewSubcategory(string newSubCat, string chosenCategory, List<ContentItem> items)
-        {
-            if (string.IsNullOrWhiteSpace(newSubCat))
-                return;
-
-            if (SubcategoryExists(items, chosenCategory, newSubCat))
-            {
-                ModelState.AddModelError("ExtendContent.NewSubCategory", "Bu alt kategori zaten mevcut!");
-            }
-        }
-
+        // Model hatalarını günlüğe yazar.
         private void LogModelStateErrors()
         {
             var errors = string.Join("; ", ModelState.Values
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage));
 
-            _logger.LogWarning("ModelState validation errors: {Errors}", errors);
+            _logger.LogWarning("ModelState hataları: {Errors}", errors);
         }
 
+        // Kategori yeniden adlandırılmalı mı kontrol eder.
         private bool ShouldRenameCategory(ExtendContentViewModel model, string chosenCategory)
         {
             return !string.IsNullOrWhiteSpace(model.EditedCategory) &&
                    model.EditedCategory.Trim() != chosenCategory;
         }
 
+        // Eski kategoriyi yeni kategoriye dönüştürür.
         private string RenameCategoryInAllItems(List<ContentItem> items, string oldCategory, string newCategory)
         {
             foreach (var item in items.Where(x =>
@@ -498,12 +490,14 @@ namespace TestKB.Controllers
             return newCategory;
         }
 
+        // Alt kategori yeniden adlandırılmalı mı kontrol eder.
         private bool ShouldRenameSubcategory(ExtendContentViewModel model, string chosenSubCategory)
         {
             return !string.IsNullOrWhiteSpace(model.EditedSubCategory) &&
                    model.EditedSubCategory.Trim() != chosenSubCategory;
         }
 
+        // Eski alt kategoriyi yeni alt kategoriye dönüştürür.
         private string RenameSubcategoryInItems(
             List<ContentItem> items,
             string category,
@@ -520,19 +514,25 @@ namespace TestKB.Controllers
             return newSubCategory;
         }
 
+        // İçeriği günceller veya yeni ekler, duplike kayıtları temizler.
         private void UpdateOrCreateContentItem(
             List<ContentItem> items,
             string category,
             string subcategory,
             string content)
         {
-            var existingEntry = items.FirstOrDefault(x =>
-                x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
-                x.SubCategory.Equals(subcategory, StringComparison.OrdinalIgnoreCase));
+            var existingEntries = items
+                .Where(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
+                            x.SubCategory.Equals(subcategory, StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
-            if (existingEntry != null)
+            if (existingEntries.Any())
             {
-                existingEntry.Content = content;
+                existingEntries[0].Content = content;
+                for (int i = 1; i < existingEntries.Count; i++)
+                {
+                    items.Remove(existingEntries[i]);
+                }
             }
             else
             {
@@ -545,12 +545,12 @@ namespace TestKB.Controllers
             }
         }
 
+        // Düzenleme sayfası için ViewModel oluşturur.
         private EditContentViewModel BuildEditContentViewModel(
             NewContentViewModel newContent,
             ExtendContentViewModel extendContent)
         {
             var allItems = _contentService.GetContentItems(true);
-
             var categories = GetDistinctOrderedCategories(allItems);
 
             var subCategories = allItems

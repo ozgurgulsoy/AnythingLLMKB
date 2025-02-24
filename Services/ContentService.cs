@@ -10,27 +10,23 @@ using TestKB.Models;
 
 namespace TestKB.Services
 {
-    public class ContentService : IContentService
+    // İçerik verilerini yönetmek için servis sınıfı.
+    public class ContentService(IWebHostEnvironment env) : IContentService
     {
-        private readonly IWebHostEnvironment _env;
-        private readonly JsonSerializerOptions _jsonOptions;
-        private static readonly object _fileLock = new object();
-        private const string DATA_FILE_NAME = "data.json";
-
-        public ContentService(IWebHostEnvironment env)
+        private readonly IWebHostEnvironment _env = env ?? throw new ArgumentNullException(nameof(env));
+        private readonly JsonSerializerOptions _jsonOptions = new()
         {
-            _env = env ?? throw new ArgumentNullException(nameof(env));
-            _jsonOptions = new JsonSerializerOptions
-            {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                WriteIndented = true
-            };
-        }
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            WriteIndented = true
+        };
+        private static readonly object FileLock = new object();
+        private const string DataFileName = "data.json";
 
+        // JSON dosyasından içerik okur.
         private List<ContentItem> ReadContentItemsFromFile()
         {
             var jsonFilePath = GetJsonFilePath();
-            lock (_fileLock)
+            lock (FileLock)
             {
                 if (!File.Exists(jsonFilePath))
                 {
@@ -45,22 +41,24 @@ namespace TestKB.Services
                 }
                 catch (Exception ex)
                 {
-                    LogError($"Error reading or deserializing JSON file: {ex.Message}");
+                    LogError($"JSON dosyası okunurken veya deserialize edilirken hata: {ex.Message}");
                     return new List<ContentItem>();
                 }
             }
         }
 
+        // Dosyadan içerikleri alır. forceReload bu örnekte yok sayılır.
         public List<ContentItem> GetContentItems(bool forceReload = false)
         {
             return ReadContentItemsFromFile();
         }
 
+        // Yeni içerik ekler.
         public void AddNewContent(string category, string subCategory, string content)
         {
             if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subCategory) || string.IsNullOrWhiteSpace(content))
             {
-                LogError("Category, SubCategory, or Content cannot be null or empty.");
+                LogError("Kategori, Alt Kategori veya İçerik boş bırakılamaz.");
                 return;
             }
 
@@ -75,11 +73,12 @@ namespace TestKB.Services
             SaveContentItems(items);
         }
 
+        // İçeriği genişletir veya ekler.
         public void ExtendContent(string selectedCategory, string selectedSubCategory, string newSubCategory, string content)
         {
             if (string.IsNullOrWhiteSpace(selectedCategory) || string.IsNullOrWhiteSpace(content))
             {
-                LogError("SelectedCategory or Content cannot be null or empty.");
+                LogError("Seçili Kategori veya İçerik boş bırakılamaz.");
                 return;
             }
 
@@ -109,21 +108,23 @@ namespace TestKB.Services
             SaveContentItems(items);
         }
 
+        // Dışarıdan alınan içerik listesini dosyaya kaydeder.
         public void UpdateContentItems(List<ContentItem> items)
         {
             if (items == null)
             {
-                LogError("Items list cannot be null.");
+                LogError("İçerik listesi null olamaz.");
                 return;
             }
 
             SaveContentItems(items);
         }
 
+        // Listeyi JSON olarak kaydeder.
         private void SaveContentItems(List<ContentItem> items)
         {
             var jsonFilePath = GetJsonFilePath();
-            lock (_fileLock)
+            lock (FileLock)
             {
                 try
                 {
@@ -132,19 +133,21 @@ namespace TestKB.Services
                 }
                 catch (Exception ex)
                 {
-                    LogError($"Error writing to JSON file: {ex.Message}");
+                    LogError($"JSON dosyasına yazılırken hata: {ex.Message}");
                 }
             }
         }
 
+        // Hata mesajını konsola yazar.
         private void LogError(string message)
         {
-            Console.Error.WriteLine($"[ERROR] {DateTime.UtcNow}: {message}");
+            Console.Error.WriteLine($"[HATA] {DateTime.UtcNow}: {message}");
         }
 
+        // JSON dosyasının tam yolunu verir.
         private string GetJsonFilePath()
         {
-            return Path.Combine(_env.WebRootPath, DATA_FILE_NAME);
+            return Path.Combine(_env.WebRootPath, DataFileName);
         }
     }
 }

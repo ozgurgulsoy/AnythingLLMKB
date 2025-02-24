@@ -5,56 +5,79 @@
     var allItemsJson = ViewBag.AllItemsJson as string ?? "[]";
     var successMessage = TempData["SuccessMessage"] as string;
 }
-<!-- JSON INJECT-->
+<!-- JSON verisini JS tarafına aktarmak için -->
 <script type="text/javascript">
     var allItemsJsonData = @Html.Raw(allItemsJson);
 </script>
 <script src="~/js/edit.js"></script>
 
 <div class="container mt-4">
+    @* Başarılı işlem mesajı varsa göster ve 2 saniye sonra sayfayı yenile *@
     @if (!string.IsNullOrEmpty(successMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
-            @successMessage
-            <button type="button" class="close" data-dismiss="alert" aria-label="Kapat">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function () {
+                var alertDiv = document.createElement('div');
+                alertDiv.className = "alert alert-success alert-dismissible fade show";
+                alertDiv.role = "alert";
+                alertDiv.innerHTML = "@successMessage" +
+                    '<button type="button" class="close" data-dismiss="alert" aria-label="Kapat">' +
+                    '<span aria-hidden="true">&times;</span></button>';
+                document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+                setTimeout(function () {
+                    location.reload();
+                }, 2000);
+            });
+        </script>
     }
+
     <h2 class="text-center mb-4">İçerik Düzenle</h2>
     <div class="card mx-auto" style="max-width: 900px;">
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs justify-content-center" id="myTab" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link active" id="newContent-tab" data-toggle="tab" href="#newContentSection" role="tab" aria-controls="newContentSection" aria-selected="true">Yeni İçerik Ekle</a>
+                    <a class="nav-link active" id="newContent-tab" data-toggle="tab" href="#newContentSection"
+                       role="tab" aria-controls="newContentSection" aria-selected="true">
+                        Yeni İçerik Ekle
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="extendContent-tab" data-toggle="tab" href="#extendContentSection" role="tab" aria-controls="extendContentSection" aria-selected="false">Var Olan İçeriği Düzenle</a>
+                    <a class="nav-link" id="extendContent-tab" data-toggle="tab" href="#extendContentSection"
+                       role="tab" aria-controls="extendContentSection" aria-selected="false">
+                        Var Olan İçeriği Düzenle
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="deleteCategory-tab" data-toggle="tab" href="#deleteCategorySection" role="tab" aria-controls="deleteCategorySection" aria-selected="false">Kategori Sil</a>
+                    <a class="nav-link" id="deleteCategory-tab" data-toggle="tab" href="#deleteCategorySection"
+                       role="tab" aria-controls="deleteCategorySection" aria-selected="false">
+                        Kategori Sil
+                    </a>
                 </li>
             </ul>
         </div>
         <div class="card-body">
             <div class="tab-content" id="myTabContent">
-                <!-- yeni içerik ekle tab -->
-                <div class="tab-pane fade show active" id="newContentSection" role="tabpanel" aria-labelledby="newContent-tab">
+                <!-- Yeni içerik ekleme bölümü -->
+                <div class="tab-pane fade show active" id="newContentSection"
+                     role="tabpanel" aria-labelledby="newContent-tab">
                     <form asp-action="EditNewContent" method="post" id="newContentForm">
                         @Html.AntiForgeryToken()
                         <div class="form-group">
                             <label asp-for="NewContent.Category" class="font-weight-bold">Yeni Kategori</label>
-                            <input asp-for="NewContent.Category" class="form-control" id="newCategory" placeholder="Kategori ismi giriniz" />
+                            <input asp-for="NewContent.Category" class="form-control" id="newCategory"
+                                   placeholder="Kategori ismi giriniz" />
                             <span id="newCategoryError" class="text-danger"></span>
                         </div>
                         <div class="form-group">
                             <label asp-for="NewContent.SubCategory" class="font-weight-bold">Yeni Alt Kategori</label>
-                            <input asp-for="NewContent.SubCategory" class="form-control" id="newSubCategory" placeholder="Alt kategori ismi giriniz" />
+                            <input asp-for="NewContent.SubCategory" class="form-control" id="newSubCategory"
+                                   placeholder="Alt kategori ismi giriniz" />
                             <span id="newSubCategoryError" class="text-danger"></span>
                         </div>
                         <div class="form-group">
                             <label asp-for="NewContent.Content" class="font-weight-bold">İçerik</label>
-                            <textarea asp-for="NewContent.Content" class="form-control" id="newContent" rows="5" placeholder="İçerik giriniz"></textarea>
+                            <textarea asp-for="NewContent.Content" class="form-control" id="newContent"
+                                      rows="5" placeholder="İçerik giriniz"></textarea>
                             <span id="newContentError" class="text-danger"></span>
                         </div>
                         <button type="submit" class="btn btn-light border-success text-success">
@@ -62,88 +85,135 @@
                         </button>
                     </form>
                 </div>
-                <!-- var olan içeriği düzenle -->
-                <div class="tab-pane fade" id="extendContentSection" role="tabpanel" aria-labelledby="extendContent-tab">
+
+                <!-- Var olan içeriği düzenleme bölümü -->
+                <div class="tab-pane fade" id="extendContentSection" role="tabpanel"
+                     aria-labelledby="extendContent-tab">
                     <form asp-action="ExtendContent" method="post" id="extendContentForm">
                         @Html.AntiForgeryToken()
+
+                        <!-- Kategori seçimi -->
                         <div class="form-group">
                             <label for="selectedCategory" class="font-weight-bold">Mevcut Kategori Seç</label>
                             <div class="input-group">
-                                <select asp-for="ExtendContent.SelectedCategory" class="form-control" id="selectedCategory" onchange="onCategoryChange()">
+                                <select asp-for="ExtendContent.SelectedCategory" class="form-control"
+                                        id="selectedCategory" onchange="onCategoryChange()">
                                     <option value="">Kategori seçiniz</option>
                                     @if (Model.ExistingCategories != null)
                                     {
                                         foreach (var cat in Model.ExistingCategories)
                                         {
-                                            var isSelected = cat.Equals(Model.ExtendContent.SelectedCategory ?? "", StringComparison.OrdinalIgnoreCase);
+                                            var isSelected = cat.Equals(Model.ExtendContent.SelectedCategory ?? "",
+                                            StringComparison.OrdinalIgnoreCase);
                                             <option value="@cat" selected="@(isSelected ? "selected" : null)">@cat</option>
                                         }
                                     }
                                 </select>
                                 <div class="input-group-append">
-                                    <button type="button" id="editCategoryBtn" onclick="toggleEditCategory()" style="display:none; padding:0; border:none; background:none; outline:none;" title="Kategoriyi Düzenle">
-                                        <img src="https://cdn2.iconfinder.com/data/icons/gentle-edges-icon-set/128/Iconfinder_0045_1.png" alt="Edit" style="width:30px; height:30px; margin-left:10px;" />
+                                    <button type="button" id="editCategoryBtn" onclick="toggleEditCategory()"
+                                            style="display:none; padding:0; border:none; background:none; outline:none;"
+                                            title="Kategoriyi Düzenle">
+                                        <img src="https://cdn2.iconfinder.com/data/icons/gentle-edges-icon-set/128/Iconfinder_0045_1.png"
+                                             alt="Edit" style="width:30px; height:30px; margin-left:10px;" />
                                     </button>
                                 </div>
                             </div>
                             <span class="text-danger" id="editCategoryError"></span>
                         </div>
+
+                        <!-- Kategori düzenleme alanı (gizli) -->
                         <div class="form-group" id="editCategoryDiv" style="display:none;">
                             <div class="input-group">
-                                <input type="text" class="form-control" id="editedCategory" name="ExtendContent.EditedCategory" placeholder="Yeni kategori ismi giriniz" />
+                                <input type="text" class="form-control" id="editedCategory"
+                                       name="ExtendContent.EditedCategory"
+                                       placeholder="Yeni kategori ismi giriniz" />
                                 <div class="input-group-append">
-                                    <button type="button" class="btn btn-primary" onclick="saveEditedCategory()">Kaydet</button>
+                                    <button type="button" class="btn btn-primary" onclick="saveEditedCategory()">
+                                        Kaydet
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                        <!-- alt kategori -->
+
+                        <!-- Alt kategori seçimi ve ekleme/düzenleme -->
                         <div id="subCategoryContainer" style="display:none;">
                             <div class="form-group">
                                 <label for="selectedSubCategory" class="font-weight-bold">Mevcut Alt Kategori Seç</label>
                                 <div class="input-group">
-                                    <select asp-for="ExtendContent.SelectedSubCategory" class="form-control" id="selectedSubCategory" onchange="onSubCategoryChange()">
+                                    <select asp-for="ExtendContent.SelectedSubCategory" class="form-control"
+                                            id="selectedSubCategory" onchange="onSubCategoryChange()">
                                         <option value="">Alt kategori seçiniz</option>
                                     </select>
                                     <div class="input-group-append">
-                                        <button type="button" id="editSubCategoryBtn" onclick="toggleEditSubCategory()" style="display:none; padding:0; border:none; background:none; outline:none;" title="Alt Kategoriyi Düzenle">
-                                            <img src="https://cdn2.iconfinder.com/data/icons/gentle-edges-icon-set/128/Iconfinder_0045_1.png" alt="Edit" style="width:30px; height:30px; margin-left:10px;" />
+                                        <button type="button" id="editSubCategoryBtn" onclick="toggleEditSubCategory()"
+                                                style="display:none; padding:0; border:none; background:none; outline:none;"
+                                                title="Alt Kategoriyi Düzenle">
+                                            <img src="https://cdn2.iconfinder.com/data/icons/gentle-edges-icon-set/128/Iconfinder_0045_1.png"
+                                                 alt="Edit"
+                                                 style="width:30px; height:30px; margin-left:10px;" />
                                         </button>
-                                        <button type="button" id="addSubCategoryBtn" onclick="toggleAddSubCategory()" style="display:inline; padding:0; border:none; background:none; outline:none;" title="Yeni Alt Kategori Ekle">
-                                            <img src="https://cdn2.iconfinder.com/data/icons/deus/24/square-plus-512.png" alt="Add" style="width:38px; height:38px; margin-left:4px;" />
+                                        <button type="button" id="addSubCategoryBtn" onclick="toggleAddSubCategory()"
+                                                style="display:inline; padding:0; border:none; background:none; outline:none;"
+                                                title="Yeni Alt Kategori Ekle">
+                                            <img src="https://cdn2.iconfinder.com/data/icons/deus/24/square-plus-512.png"
+                                                 alt="Add"
+                                                 style="width:38px; height:38px; margin-left:4px;" />
                                         </button>
                                     </div>
                                 </div>
                                 <span class="text-danger" id="editSubCategoryError"></span>
                             </div>
+
+                            <!-- Gizli alan: kullanıcı alt kategori seçimini tutar -->
+                            <input type="hidden" id="hiddenSelectedSubCategory" name="ExtendContent.HiddenSelectedSubCategory" />
+
+                            <!-- Alt kategori düzenleme alanı (gizli) -->
                             <div class="form-group" id="editSubCategoryDiv" style="display:none;">
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="editedSubCategory" name="ExtendContent.EditedSubCategory" placeholder="Yeni alt kategori ismi giriniz" />
+                                    <input type="text" class="form-control" id="editedSubCategory"
+                                           name="ExtendContent.EditedSubCategory"
+                                           placeholder="Yeni alt kategori ismi giriniz" />
                                     <div class="input-group-append">
-                                        <button type="button" class="btn btn-primary" onclick="saveEditedSubCategory()">Kaydet</button>
+                                        <button type="button" class="btn btn-primary" onclick="saveEditedSubCategory()">
+                                            Kaydet
+                                        </button>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Yeni alt kategori ekleme alanı (gizli) -->
                             <div class="form-group" id="addSubCategoryDiv" style="display:none;">
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="newSubCategoryInput" name="ExtendContent.NewSubCategory" placeholder="Yeni alt kategori ismi giriniz" />
+                                    <input type="text" class="form-control" id="newSubCategoryInput"
+                                           name="ExtendContent.NewSubCategory"
+                                           placeholder="Yeni alt kategori ismi giriniz" />
                                     <div class="input-group-append">
-                                        <button type="button" class="btn btn-success" onclick="saveNewSubCategory()">Ekle</button>
+                                        <button type="button" class="btn btn-success" onclick="saveNewSubCategory()">
+                                            Ekle
+                                        </button>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- İçerik alanı -->
+                            <div class="form-group" id="contentDiv" style="display:none;">
+                                <label asp-for="ExtendContent.Content" class="font-weight-bold">İçerik</label>
+                                <textarea asp-for="ExtendContent.Content" class="form-control"
+                                          id="extendContent" rows="5"
+                                          placeholder="İçerik ekleyiniz"></textarea>
+                                <span id="extendContentError" class="text-danger"></span>
+                            </div>
+                            <button type="submit" class="btn btn-light border-primary text-primary"
+                                    id="submitContentBtn" style="display:none;">
+                                <i class="fa fa-upload mr-1"></i> İçerik Güncelle
+                            </button>
                         </div>
-                        <div class="form-group" id="contentDiv" style="display:none;">
-                            <label asp-for="ExtendContent.Content" class="font-weight-bold">İçerik</label>
-                            <textarea asp-for="ExtendContent.Content" class="form-control" id="extendContent" rows="5" placeholder="İçerik ekleyiniz"></textarea>
-                            <span id="extendContentError" class="text-danger"></span>
-                        </div>
-                        <button type="submit" class="btn btn-light border-primary text-primary" id="submitContentBtn" style="display:none;">
-                            <i class="fa fa-upload mr-1"></i> İçerik Güncelle
-                        </button>
                     </form>
                 </div>
-                <!-- kategori sil -->
-                <div class="tab-pane fade" id="deleteCategorySection" role="tabpanel" aria-labelledby="deleteCategory-tab">
+
+                <!-- Kategori silme bölümü -->
+                <div class="tab-pane fade" id="deleteCategorySection" role="tabpanel"
+                     aria-labelledby="deleteCategory-tab">
                     <div class="text-center">
                         <form>
                             <div class="form-group">
@@ -160,14 +230,21 @@
                                 </select>
                                 <span class="text-danger" id="deleteCategoryError"></span>
                             </div>
-                            <button type="button" class="btn btn-light border-danger text-danger" onclick="confirmDeleteCategory()">
+                            <button type="button" class="btn btn-light border-danger text-danger"
+                                    onclick="confirmDeleteCategory()">
                                 <i class="fa fa-trash mr-1"></i> Kategori Sil
                             </button>
                         </form>
                         <div id="inlineDeleteConfirm" class="mt-2" style="display:none;">
-                            <span class="text-danger font-weight-bold">Bu kategoriyi silmek istediğinize emin misiniz?&nbsp;</span>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteCategory()">Evet</button>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelDelete()">Hayır</button>
+                            <span class="text-danger font-weight-bold">
+                                Bu kategoriyi silmek istediğinize emin misiniz?&nbsp;
+                            </span>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteCategory()">
+                                Evet
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelDelete()">
+                                Hayır
+                            </button>
                         </div>
                     </div>
                 </div>
