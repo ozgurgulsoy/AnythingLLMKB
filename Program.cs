@@ -1,4 +1,5 @@
 using TestKB.Middleware;
+using TestKB.Repositories;
 using TestKB.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +10,7 @@ builder.Services.AddControllersWithViews();
 // Register our content services.
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<IContentManager, ContentManager>();
-
+builder.Services.AddScoped<IContentRepository, ContentRepository>();
 // Register error handling service
 builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
 

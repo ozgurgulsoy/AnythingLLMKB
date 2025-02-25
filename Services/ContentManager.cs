@@ -26,7 +26,7 @@ namespace TestKB.Services
         /// Tüm içerik öğelerini getirir.
         /// </summary>
         public List<ContentItem> GetAllContentItems() =>
-            _contentService.GetContentItems(true);
+    _contentService.GetContentItemsAsync(true).Result;
 
         /// <summary>
         /// Verilen kategoriye göre içerik listesini ve kategorileri hazırlayan view modeli oluşturur.
@@ -116,7 +116,7 @@ namespace TestKB.Services
             {
                 throw new InvalidOperationException("This subcategory already exists.");
             }
-            _contentService.AddNewContent(model.Category.Trim(), model.SubCategory?.Trim(), model.Content.Trim());
+            _contentService.AddNewContentAsync(model.Category.Trim(), model.SubCategory?.Trim(), model.Content.Trim());
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace TestKB.Services
             }
 
             UpdateOrCreateContentItem(items, chosenCategory, actualSubCategory, model.Content?.Trim());
-            _contentService.UpdateContentItems(items);
+            _contentService.UpdateContentItemsAsync(items);
         }
 
         /// <summary>
@@ -177,7 +177,7 @@ namespace TestKB.Services
             {
                 item.Category = newCategory;
             }
-            _contentService.UpdateContentItems(items);
+            _contentService.UpdateContentItemsAsync(items);
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace TestKB.Services
             {
                 item.SubCategory = newSubCategory;
             }
-            _contentService.UpdateContentItems(items);
+            _contentService.UpdateContentItemsAsync(items);
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace TestKB.Services
                 SubCategory = newSubCategory,
                 Content = string.Empty
             });
-            _contentService.UpdateContentItems(items);
+            _contentService.UpdateContentItemsAsync(items);
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace TestKB.Services
             category = category.Trim();
             int removedCount = items.RemoveAll(x =>
                 x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
-            _contentService.UpdateContentItems(items);
+            _contentService.UpdateContentItemsAsync(items);
             return removedCount;
         }
 

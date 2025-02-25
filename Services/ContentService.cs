@@ -1,68 +1,49 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿// Services/ContentService.cs
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using TestKB.Models;
+using TestKB.Repositories;
 
 namespace TestKB.Services
 {
-    // İçerik verilerini yönetmek için servis sınıfı.
-    public class ContentService(IWebHostEnvironment env) : IContentService
+    /// <summary>
+    /// İçerik servis implementasyonu. Repository kullanarak verilere erişir.
+    /// </summary>
+    public class ContentService : IContentService
     {
-        private readonly IWebHostEnvironment _env = env ?? throw new ArgumentNullException(nameof(env));
-        private readonly JsonSerializerOptions _jsonOptions = new()
-        {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            WriteIndented = true
-        };
-        private static readonly object FileLock = new object();
-        private const string DataFileName = "data.json";
+        private readonly IContentRepository _repository;
+        private readonly ILogger<ContentService> _logger;
 
-        // JSON dosyasından içerik okur.
-        private List<ContentItem> ReadContentItemsFromFile()
+        public ContentService(
+            IContentRepository repository,
+            ILogger<ContentService> logger)
         {
-            var jsonFilePath = GetJsonFilePath();
-            lock (FileLock)
-            {
-                if (!File.Exists(jsonFilePath))
-                {
-                    return new List<ContentItem>();
-                }
-
-                try
-                {
-                    var jsonString = File.ReadAllText(jsonFilePath, Encoding.UTF8);
-                    return JsonSerializer.Deserialize<List<ContentItem>>(jsonString, _jsonOptions)
-                           ?? new List<ContentItem>();
-                }
-                catch (Exception ex)
-                {
-                    LogError($"JSON dosyası okunurken veya deserialize edilirken hata: {ex.Message}");
-                    return new List<ContentItem>();
-                }
-            }
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // Dosyadan içerikleri alır. forceReload bu örnekte yok sayılır.
-        public List<ContentItem> GetContentItems(bool forceReload = false)
+        /// <summary>
+        /// Tüm içerik öğelerini asenkron olarak getirir.
+        /// </summary>
+        public async Task<List<ContentItem>> GetContentItemsAsync(bool forceReload = false)
         {
-            return ReadContentItemsFromFile();
+            return await _repository.GetAllAsync();
         }
 
-        // Yeni içerik ekler.
-        public void AddNewContent(string category, string subCategory, string content)
+        /// <summary>
+        /// Yeni içerik ekler.
+        /// </summary>
+        public async Task AddNewContentAsync(string category, string subCategory, string content)
         {
             if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subCategory) || string.IsNullOrWhiteSpace(content))
             {
-                LogError("Kategori, Alt Kategori veya İçerik boş bırakılamaz.");
-                return;
+                _logger.LogWarning("Kategori, Alt Kategori veya İçerik boş bırakılamaz.");
+                throw new ArgumentException("Kategori, Alt Kategori veya İçerik boş bırakılamaz.");
             }
 
-            var items = ReadContentItemsFromFile();
+            var items = await _repository.GetAllAsync();
             items.Add(new ContentItem
             {
                 Category = category.Trim(),
@@ -70,26 +51,28 @@ namespace TestKB.Services
                 Content = content.Trim()
             });
 
-            SaveContentItems(items);
+            await _repository.SaveAsync(items);
         }
 
-        // İçeriği genişletir veya ekler.
-        public void ExtendContent(string selectedCategory, string selectedSubCategory, string newSubCategory, string content)
+        /// <summary>
+        /// İçeriği genişletir veya ekler.
+        /// </summary>
+        public async Task ExtendContentAsync(string selectedCategory, string selectedSubCategory, string newSubCategory, string content)
         {
             if (string.IsNullOrWhiteSpace(selectedCategory) || string.IsNullOrWhiteSpace(content))
             {
-                LogError("Seçili Kategori veya İçerik boş bırakılamaz.");
-                return;
+                _logger.LogWarning("Seçili Kategori veya İçerik boş bırakılamaz.");
+                throw new ArgumentException("Seçili Kategori veya İçerik boş bırakılamaz.");
             }
 
-            var items = ReadContentItemsFromFile();
+            var items = await _repository.GetAllAsync();
             var actualSubCategory = !string.IsNullOrWhiteSpace(newSubCategory)
                 ? newSubCategory.Trim()
                 : selectedSubCategory?.Trim();
 
-            var existingEntry = items.FirstOrDefault(x =>
-                x.Category.Equals(selectedCategory.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                x.SubCategory.Equals(actualSubCategory, StringComparison.OrdinalIgnoreCase));
+            var existingEntry = items.Find(x =>
+                string.Equals(x.Category.Trim(), selectedCategory.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(x.SubCategory, actualSubCategory, StringComparison.OrdinalIgnoreCase));
 
             if (existingEntry != null)
             {
@@ -105,49 +88,21 @@ namespace TestKB.Services
                 });
             }
 
-            SaveContentItems(items);
+            await _repository.SaveAsync(items);
         }
 
-        // Dışarıdan alınan içerik listesini dosyaya kaydeder.
-        public void UpdateContentItems(List<ContentItem> items)
+        /// <summary>
+        /// İçerik öğelerini günceller.
+        /// </summary>
+        public async Task UpdateContentItemsAsync(List<ContentItem> items)
         {
             if (items == null)
             {
-                LogError("İçerik listesi null olamaz.");
-                return;
+                _logger.LogWarning("İçerik listesi null olamaz.");
+                throw new ArgumentNullException(nameof(items), "İçerik listesi null olamaz.");
             }
 
-            SaveContentItems(items);
-        }
-
-        // Listeyi JSON olarak kaydeder.
-        private void SaveContentItems(List<ContentItem> items)
-        {
-            var jsonFilePath = GetJsonFilePath();
-            lock (FileLock)
-            {
-                try
-                {
-                    var jsonString = JsonSerializer.Serialize(items, _jsonOptions);
-                    File.WriteAllText(jsonFilePath, jsonString, Encoding.UTF8);
-                }
-                catch (Exception ex)
-                {
-                    LogError($"JSON dosyasına yazılırken hata: {ex.Message}");
-                }
-            }
-        }
-
-        // Hata mesajını konsola yazar.
-        private void LogError(string message)
-        {
-            Console.Error.WriteLine($"[HATA] {DateTime.UtcNow}: {message}");
-        }
-
-        // JSON dosyasının tam yolunu verir.
-        private string GetJsonFilePath()
-        {
-            return Path.Combine(_env.WebRootPath, DataFileName);
+            await _repository.SaveAsync(items);
         }
     }
 }
