@@ -1,6 +1,8 @@
-﻿using System;
+﻿// Services/ContentManager.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using TestKB.Models;
 using TestKB.ViewModels;
 
@@ -23,18 +25,18 @@ namespace TestKB.Services
         }
 
         /// <summary>
-        /// Tüm içerik öğelerini getirir.
+        /// Tüm içerik öğelerini asenkron olarak getirir.
         /// </summary>
-        public List<ContentItem> GetAllContentItems() =>
-    _contentService.GetContentItemsAsync(true).Result;
+        public async Task<List<ContentItem>> GetAllContentItemsAsync() =>
+            await _contentService.GetContentItemsAsync(true);
 
         /// <summary>
         /// Verilen kategoriye göre içerik listesini ve kategorileri hazırlayan view modeli oluşturur.
         /// </summary>
         /// <param name="category">Filtrelenecek kategori</param>
-        public ContentListViewModel BuildContentListViewModel(string category)
+        public async Task<ContentListViewModel> BuildContentListViewModelAsync(string category)
         {
-            var items = GetAllContentItems();
+            var items = await GetAllContentItemsAsync();
             var categories = GetDistinctOrderedCategories(items);
             var filteredItems = FilterItemsByCategory(items, category);
             return new ContentListViewModel
@@ -50,9 +52,9 @@ namespace TestKB.Services
         /// </summary>
         /// <param name="newContent">Yeni içerik view modeli</param>
         /// <param name="extendContent">Genişletilmiş içerik view modeli</param>
-        public EditContentViewModel BuildEditContentViewModel(NewContentViewModel newContent, ExtendContentViewModel extendContent)
+        public async Task<EditContentViewModel> BuildEditContentViewModelAsync(NewContentViewModel newContent, ExtendContentViewModel extendContent)
         {
-            var items = GetAllContentItems();
+            var items = await GetAllContentItemsAsync();
             var categories = GetDistinctOrderedCategories(items);
             var subCategories = items.GroupBy(x => x.Category)
                 .ToDictionary(
@@ -77,9 +79,9 @@ namespace TestKB.Services
         /// </summary>
         /// <param name="selectedCategory">Seçilen kategori</param>
         /// <param name="selectedSubCategory">Seçilen alt kategori</param>
-        public ExtendContentViewModel CreateExtendContentViewModel(string selectedCategory, string selectedSubCategory)
+        public async Task<ExtendContentViewModel> CreateExtendContentViewModelAsync(string selectedCategory, string selectedSubCategory)
         {
-            var items = GetAllContentItems();
+            var items = await GetAllContentItemsAsync();
             var model = new ExtendContentViewModel
             {
                 SelectedCategory = selectedCategory,
@@ -104,9 +106,11 @@ namespace TestKB.Services
         /// Yeni içerik ekler. Eğer kategori veya alt kategori varsa hata fırlatır.
         /// </summary>
         /// <param name="model">Yeni içerik view modeli</param>
-        public void AddNewContent(NewContentViewModel model)
+        public async Task AddNewContentAsync(NewContentViewModel model)
         {
-            var items = GetAllContentItems();
+            if (model == null) throw new ArgumentNullException(nameof(model));
+
+            var items = await GetAllContentItemsAsync();
             if (CategoryExists(items, model.Category?.Trim()))
             {
                 throw new InvalidOperationException("This category already exists.");
@@ -116,16 +120,18 @@ namespace TestKB.Services
             {
                 throw new InvalidOperationException("This subcategory already exists.");
             }
-            _contentService.AddNewContentAsync(model.Category.Trim(), model.SubCategory?.Trim(), model.Content.Trim());
+            await _contentService.AddNewContentAsync(model.Category.Trim(), model.SubCategory?.Trim(), model.Content.Trim());
         }
 
         /// <summary>
         /// Varolan içeriği günceller veya ekler.
         /// </summary>
         /// <param name="model">Genişletilmiş içerik view modeli</param>
-        public void UpdateContent(ExtendContentViewModel model)
+        public async Task UpdateContentAsync(ExtendContentViewModel model)
         {
-            var items = GetAllContentItems();
+            if (model == null) throw new ArgumentNullException(nameof(model));
+
+            var items = await GetAllContentItemsAsync();
             var chosenCategory = model.SelectedCategory?.Trim();
             var chosenSubCategory = model.SelectedSubCategory?.Trim();
             var newSubCategory = model.NewSubCategory?.Trim();
@@ -156,7 +162,7 @@ namespace TestKB.Services
             }
 
             UpdateOrCreateContentItem(items, chosenCategory, actualSubCategory, model.Content?.Trim());
-            _contentService.UpdateContentItemsAsync(items);
+            await _contentService.UpdateContentItemsAsync(items);
         }
 
         /// <summary>
@@ -164,9 +170,9 @@ namespace TestKB.Services
         /// </summary>
         /// <param name="oldCategory">Eski kategori adı</param>
         /// <param name="newCategory">Yeni kategori adı</param>
-        public void UpdateCategory(string oldCategory, string newCategory)
+        public async Task UpdateCategoryAsync(string oldCategory, string newCategory)
         {
-            var items = GetAllContentItems();
+            var items = await GetAllContentItemsAsync();
             oldCategory = oldCategory.Trim();
             newCategory = newCategory.Trim();
             if (items.Any(x => x.Category.Equals(newCategory, StringComparison.OrdinalIgnoreCase)))
@@ -177,7 +183,7 @@ namespace TestKB.Services
             {
                 item.Category = newCategory;
             }
-            _contentService.UpdateContentItemsAsync(items);
+            await _contentService.UpdateContentItemsAsync(items);
         }
 
         /// <summary>
@@ -186,9 +192,9 @@ namespace TestKB.Services
         /// <param name="category">Kategori adı</param>
         /// <param name="oldSubCategory">Eski alt kategori adı</param>
         /// <param name="newSubCategory">Yeni alt kategori adı</param>
-        public void UpdateSubCategory(string category, string oldSubCategory, string newSubCategory)
+        public async Task UpdateSubCategoryAsync(string category, string oldSubCategory, string newSubCategory)
         {
-            var items = GetAllContentItems();
+            var items = await GetAllContentItemsAsync();
             category = category.Trim();
             oldSubCategory = oldSubCategory.Trim();
             newSubCategory = newSubCategory.Trim();
@@ -203,7 +209,7 @@ namespace TestKB.Services
             {
                 item.SubCategory = newSubCategory;
             }
-            _contentService.UpdateContentItemsAsync(items);
+            await _contentService.UpdateContentItemsAsync(items);
         }
 
         /// <summary>
@@ -211,9 +217,9 @@ namespace TestKB.Services
         /// </summary>
         /// <param name="category">Kategori adı</param>
         /// <param name="newSubCategory">Yeni alt kategori adı</param>
-        public void AddSubCategory(string category, string newSubCategory)
+        public async Task AddSubCategoryAsync(string category, string newSubCategory)
         {
-            var items = GetAllContentItems();
+            var items = await GetAllContentItemsAsync();
             category = category.Trim();
             newSubCategory = newSubCategory.Trim();
             if (SubcategoryExists(items, category, newSubCategory))
@@ -226,7 +232,7 @@ namespace TestKB.Services
                 SubCategory = newSubCategory,
                 Content = string.Empty
             });
-            _contentService.UpdateContentItemsAsync(items);
+            await _contentService.UpdateContentItemsAsync(items);
         }
 
         /// <summary>
@@ -234,13 +240,13 @@ namespace TestKB.Services
         /// </summary>
         /// <param name="category">Silinecek kategori adı</param>
         /// <returns>Silinen öğe sayısı</returns>
-        public int DeleteCategory(string category)
+        public async Task<int> DeleteCategoryAsync(string category)
         {
-            var items = GetAllContentItems();
+            var items = await GetAllContentItemsAsync();
             category = category.Trim();
             int removedCount = items.RemoveAll(x =>
                 x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
-            _contentService.UpdateContentItemsAsync(items);
+            await _contentService.UpdateContentItemsAsync(items);
             return removedCount;
         }
 
@@ -277,6 +283,10 @@ namespace TestKB.Services
             !string.IsNullOrWhiteSpace(subcategory) &&
             items.Any(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
                            x.SubCategory.Equals(subcategory, StringComparison.OrdinalIgnoreCase));
+
+        // Other helper methods remain the same but make sure they're properly encapsulated
+        // ...
+        // Services/ContentManager.cs - Add these under the #region Yardımcı Metotlar section
 
         /// <summary>
         /// Alt kategori seçimini normalize eder.
@@ -352,11 +362,10 @@ namespace TestKB.Services
                 {
                     Category = category,
                     SubCategory = subcategory,
-                    Content = content
+                    Content = content ?? string.Empty
                 });
             }
         }
-
         #endregion
     }
 }

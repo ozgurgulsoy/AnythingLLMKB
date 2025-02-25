@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/ContentController.cs
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using TestKB.Models;
 using TestKB.Services;
 using TestKB.ViewModels;
@@ -49,11 +53,11 @@ namespace TestKB.Controllers
         /// Ana sayfa içeriğini, isteğe bağlı kategori filtresiyle görüntüler.
         /// </summary>
         /// <param name="category">Filtre için kategori</param>
-        public IActionResult Index(string category, Department? dept)
+        public async Task<IActionResult> Index(string category, Department? dept)
         {
             try
             {
-                var viewModel = _contentManager.BuildContentListViewModel(category);
+                var viewModel = await _contentManager.BuildContentListViewModelAsync(category);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -74,13 +78,13 @@ namespace TestKB.Controllers
         /// Düzenleme sayfasını yükler ve gerekli view modeli oluşturur.
         /// </summary>
         [HttpGet]
-        public IActionResult Edit(string selectedCategory, string selectedSubCategory)
+        public async Task<IActionResult> Edit(string selectedCategory, string selectedSubCategory)
         {
             try
             {
-                var extendModel = _contentManager.CreateExtendContentViewModel(selectedCategory, selectedSubCategory);
-                var viewModel = _contentManager.BuildEditContentViewModel(new NewContentViewModel(), extendModel);
-                var allItems = _contentManager.GetAllContentItems();
+                var extendModel = await _contentManager.CreateExtendContentViewModelAsync(selectedCategory, selectedSubCategory);
+                var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), extendModel);
+                var allItems = await _contentManager.GetAllContentItemsAsync();
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
                 return View(viewModel);
             }
@@ -103,7 +107,8 @@ namespace TestKB.Controllers
         /// </summary>
         /// <param name="model">Yeni içerik view modeli</param>
         [HttpPost]
-        public IActionResult EditNewContent([Bind(Prefix = "NewContent")] NewContentViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditNewContent([Bind(Prefix = "NewContent")] NewContentViewModel model)
         {
             try
             {
@@ -115,15 +120,15 @@ namespace TestKB.Controllers
 
                     var error = _errorHandlingService.HandleValidationErrors(validationErrors);
 
-                    var allItems = _contentManager.GetAllContentItems();
-                    var viewModel = _contentManager.BuildEditContentViewModel(model, new ExtendContentViewModel());
+                    var allItems = await _contentManager.GetAllContentItemsAsync();
+                    var viewModel = await _contentManager.BuildEditContentViewModelAsync(model, new ExtendContentViewModel());
                     ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
                     TempData["ErrorMessage"] = error.Message;
                     TempData["ActiveTab"] = "newContent";
                     return View("Edit", viewModel);
                 }
 
-                _contentManager.AddNewContent(model);
+                await _contentManager.AddNewContentAsync(model);
 
                 TempData["SuccessMessage"] = _errorHandlingService.CreateSuccessResponse("İçerik başarıyla eklendi.").Message;
                 return RedirectToAction("Edit");
@@ -132,8 +137,8 @@ namespace TestKB.Controllers
             {
                 var error = _errorHandlingService.HandleException(ex, "Yeni içerik ekleme");
 
-                var allItems = _contentManager.GetAllContentItems();
-                var viewModel = _contentManager.BuildEditContentViewModel(model, new ExtendContentViewModel());
+                var allItems = await _contentManager.GetAllContentItemsAsync();
+                var viewModel = await _contentManager.BuildEditContentViewModelAsync(model, new ExtendContentViewModel());
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
                 TempData["ErrorMessage"] = error.Message;
                 TempData["ActiveTab"] = "newContent";
@@ -146,7 +151,8 @@ namespace TestKB.Controllers
         /// </summary>
         /// <param name="model">Genişletilmiş içerik view modeli</param>
         [HttpPost]
-        public IActionResult ExtendContent([Bind(Prefix = "ExtendContent")] ExtendContentViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExtendContent([Bind(Prefix = "ExtendContent")] ExtendContentViewModel model)
         {
             try
             {
@@ -164,14 +170,14 @@ namespace TestKB.Controllers
                     var error = _errorHandlingService.HandleValidationErrors(validationErrors);
 
                     _logger.LogWarning("ModelState hataları: {Errors}", string.Join("; ", validationErrors));
-                    var viewModel = _contentManager.BuildEditContentViewModel(new NewContentViewModel(), model);
-                    var allItems = _contentManager.GetAllContentItems();
+                    var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), model);
+                    var allItems = await _contentManager.GetAllContentItemsAsync();
                     ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
                     TempData["ErrorMessage"] = error.Message;
                     return View("Edit", viewModel);
                 }
 
-                _contentManager.UpdateContent(model);
+                await _contentManager.UpdateContentAsync(model);
 
                 TempData["SuccessMessage"] = _errorHandlingService.CreateSuccessResponse("İçerik başarıyla güncellendi.").Message;
                 return RedirectToAction("Edit");
@@ -186,8 +192,8 @@ namespace TestKB.Controllers
                 }
 
                 TempData["ErrorMessage"] = error.Message;
-                var viewModel = _contentManager.BuildEditContentViewModel(new NewContentViewModel(), model);
-                var allItems = _contentManager.GetAllContentItems();
+                var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), model);
+                var allItems = await _contentManager.GetAllContentItemsAsync();
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
                 return View("Edit", viewModel);
             }
@@ -198,7 +204,8 @@ namespace TestKB.Controllers
         /// </summary>
         /// <param name="model">Kategori güncelleme view modeli</param>
         [HttpPost]
-        public IActionResult UpdateCategory([FromBody] UpdateCategoryViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateCategory([FromBody] UpdateCategoryViewModel model)
         {
             try
             {
@@ -208,7 +215,7 @@ namespace TestKB.Controllers
                         new[] { "Eski veya yeni kategori adı boş olamaz." }));
                 }
 
-                _contentManager.UpdateCategory(model.OldCategory, model.NewCategory);
+                await _contentManager.UpdateCategoryAsync(model.OldCategory, model.NewCategory);
 
                 return Json(_errorHandlingService.CreateSuccessResponse("Kategori başarıyla güncellendi."));
             }
@@ -224,7 +231,8 @@ namespace TestKB.Controllers
         /// </summary>
         /// <param name="model">Alt kategori güncelleme view modeli</param>
         [HttpPost]
-        public IActionResult UpdateSubCategory([FromBody] UpdateSubCategoryViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSubCategory([FromBody] UpdateSubCategoryViewModel model)
         {
             try
             {
@@ -236,7 +244,7 @@ namespace TestKB.Controllers
                         new[] { "Kategori veya alt kategori bilgisi boş olamaz." }));
                 }
 
-                _contentManager.UpdateSubCategory(model.Category, model.OldSubCategory, model.NewSubCategory);
+                await _contentManager.UpdateSubCategoryAsync(model.Category, model.OldSubCategory, model.NewSubCategory);
 
                 return Json(_errorHandlingService.CreateSuccessResponse("Alt kategori başarıyla güncellendi."));
             }
@@ -252,7 +260,8 @@ namespace TestKB.Controllers
         /// </summary>
         /// <param name="model">Yeni alt kategori view modeli</param>
         [HttpPost]
-        public IActionResult AddSubCategory([FromBody] AddSubCategoryViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddSubCategory([FromBody] AddSubCategoryViewModel model)
         {
             try
             {
@@ -262,7 +271,7 @@ namespace TestKB.Controllers
                         new[] { "Kategori veya yeni alt kategori bilgisi boş olamaz." }));
                 }
 
-                _contentManager.AddSubCategory(model.Category, model.NewSubCategory);
+                await _contentManager.AddSubCategoryAsync(model.Category, model.NewSubCategory);
 
                 return Json(_errorHandlingService.CreateSuccessResponse("Alt kategori başarıyla eklendi."));
             }
@@ -277,11 +286,11 @@ namespace TestKB.Controllers
         /// Tüm içerik öğelerini JSON formatında döndürür.
         /// </summary>
         [HttpGet]
-        public IActionResult GetContentItems()
+        public async Task<IActionResult> GetContentItems()
         {
             try
             {
-                var items = _contentManager.GetAllContentItems();
+                var items = await _contentManager.GetAllContentItemsAsync();
                 return Json(new { success = true, data = items });
             }
             catch (Exception ex)
@@ -294,7 +303,7 @@ namespace TestKB.Controllers
         /// <summary>
         /// JSON dosyasındaki içeriği dönüştürüp görüntüleyen sayfayı yükler.
         /// </summary>
-        public IActionResult ConvertedContent()
+        public async Task<IActionResult> ConvertedContent()
         {
             try
             {
@@ -305,7 +314,7 @@ namespace TestKB.Controllers
                     return View((object)"");
                 }
 
-                string jsonContent = System.IO.File.ReadAllText(jsonFilePath);
+                string jsonContent = await System.IO.File.ReadAllTextAsync(jsonFilePath);
                 string plainText = TestKB.Services.JsonToTextConverter.ConvertJsonToText(jsonContent);
 
                 return View((object)plainText);
@@ -324,7 +333,8 @@ namespace TestKB.Controllers
         /// </summary>
         /// <param name="model">Kategori silme view modeli</param>
         [HttpPost]
-        public IActionResult DeleteCategory([FromBody] DeleteCategoryViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCategory([FromBody] DeleteCategoryViewModel model)
         {
             try
             {
@@ -334,7 +344,7 @@ namespace TestKB.Controllers
                         new[] { "Kategori adı boş olamaz." }));
                 }
 
-                int removedCount = _contentManager.DeleteCategory(model.Category);
+                int removedCount = await _contentManager.DeleteCategoryAsync(model.Category);
 
                 return Json(_errorHandlingService.CreateSuccessResponse($"{removedCount} içerik öğesi silindi."));
             }
