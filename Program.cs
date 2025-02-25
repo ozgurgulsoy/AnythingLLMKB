@@ -7,6 +7,7 @@ builder.Services.AddControllersWithViews();
 
 // Register our content service.
 builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<IContentManager, ContentManager>();
 
 var app = builder.Build();
 
@@ -24,6 +25,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=DepartmentSelect}/{id?}");
+    pattern: "{controller=Content}/{action=DepartmentSelect}/{id?}");
 
 app.Run();

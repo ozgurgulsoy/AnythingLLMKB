@@ -30,7 +30,7 @@
      * @param {Function} [callback] - Veriler yüklendikten sonra çağrılacak fonksiyon
      */
     function refreshAllItems(callback) {
-        fetch('/Home/GetContentItems')
+        fetch('/Content/GetContentItems')
             .then(res => res.json())
             .then(updatedItems => {
                 allItems = updatedItems;
@@ -108,7 +108,7 @@
 
         // Sunucuya kategori değişikliği bilgisini gönderir
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        fetch('/Home/UpdateCategory', {
+        fetch('/Content/UpdateCategory', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -227,7 +227,7 @@
 
         // Sunucuya alt kategori güncelleme isteği gönder
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        fetch('/Home/UpdateSubCategory', {
+        fetch('/Content/UpdateSubCategory', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -290,7 +290,7 @@
         }
         // Sunucuya yeni alt kategori ekleme isteği gönder
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        fetch('/Home/AddSubCategory', {
+        fetch('/Content/AddSubCategory', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -359,7 +359,7 @@
         setErrorText('deleteCategoryError', '');
 
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        fetch('/Home/DeleteCategory', {
+        fetch('/Content/DeleteCategory', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
