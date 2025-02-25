@@ -14,15 +14,21 @@ namespace TestKB.Controllers
         private readonly IContentManager _contentManager;
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<ContentController> _logger;
+        private readonly IErrorHandlingService _errorHandlingService;
 
         /// <summary>
         /// ContentController sınıfının yapıcı metodu.
         /// </summary>
-        public ContentController(IContentManager contentManager, IWebHostEnvironment env, ILogger<ContentController> logger)
+        public ContentController(
+            IContentManager contentManager,
+            IWebHostEnvironment env,
+            ILogger<ContentController> logger,
+            IErrorHandlingService errorHandlingService)
         {
             _contentManager = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
             _env = env ?? throw new ArgumentNullException(nameof(env));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
         }
 
         /// <summary>
@@ -52,8 +58,15 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Index action");
-                return StatusCode(500, "An error occurred.");
+                var error = _errorHandlingService.HandleException(ex, "Index action");
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(error);
+                }
+
+                TempData["ErrorMessage"] = error.Message;
+                return View(new ContentListViewModel());
             }
         }
 
@@ -73,8 +86,15 @@ namespace TestKB.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading Edit page");
-                return StatusCode(500, "An error occurred.");
+                var error = _errorHandlingService.HandleException(ex, "Edit page loading");
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(error);
+                }
+
+                TempData["ErrorMessage"] = error.Message;
+                return View(new EditContentViewModel());
             }
         }
 
@@ -87,16 +107,36 @@ namespace TestKB.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    var validationErrors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage);
+
+                    var error = _errorHandlingService.HandleValidationErrors(validationErrors);
+
+                    var allItems = _contentManager.GetAllContentItems();
+                    var viewModel = _contentManager.BuildEditContentViewModel(model, new ExtendContentViewModel());
+                    ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
+                    TempData["ErrorMessage"] = error.Message;
+                    TempData["ActiveTab"] = "newContent";
+                    return View("Edit", viewModel);
+                }
+
                 _contentManager.AddNewContent(model);
-                TempData["SuccessMessage"] = "Content added successfully.";
+
+                TempData["SuccessMessage"] = _errorHandlingService.CreateSuccessResponse("İçerik başarıyla eklendi.").Message;
                 return RedirectToAction("Edit");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adding new content");
+                var error = _errorHandlingService.HandleException(ex, "Yeni içerik ekleme");
+
                 var allItems = _contentManager.GetAllContentItems();
                 var viewModel = _contentManager.BuildEditContentViewModel(model, new ExtendContentViewModel());
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
+                TempData["ErrorMessage"] = error.Message;
+                TempData["ActiveTab"] = "newContent";
                 return View("Edit", viewModel);
             }
         }
@@ -112,26 +152,44 @@ namespace TestKB.Controllers
             {
                 if (string.IsNullOrWhiteSpace(model.Content))
                 {
-                    ModelState.AddModelError("ExtendContent.Content", "Content cannot be empty.");
+                    ModelState.AddModelError("ExtendContent.Content", "İçerik boş olamaz.");
                 }
+
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning("ModelState errors: {Errors}",
-                        string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                    var validationErrors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage);
+
+                    var error = _errorHandlingService.HandleValidationErrors(validationErrors);
+
+                    _logger.LogWarning("ModelState hataları: {Errors}", string.Join("; ", validationErrors));
                     var viewModel = _contentManager.BuildEditContentViewModel(new NewContentViewModel(), model);
                     var allItems = _contentManager.GetAllContentItems();
                     ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
+                    TempData["ErrorMessage"] = error.Message;
                     return View("Edit", viewModel);
                 }
 
                 _contentManager.UpdateContent(model);
-                TempData["SuccessMessage"] = "Content updated successfully.";
+
+                TempData["SuccessMessage"] = _errorHandlingService.CreateSuccessResponse("İçerik başarıyla güncellendi.").Message;
                 return RedirectToAction("Edit");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating content");
-                return StatusCode(500, "An error occurred.");
+                var error = _errorHandlingService.HandleException(ex, "Updating content");
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(error);
+                }
+
+                TempData["ErrorMessage"] = error.Message;
+                var viewModel = _contentManager.BuildEditContentViewModel(new NewContentViewModel(), model);
+                var allItems = _contentManager.GetAllContentItems();
+                ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
+                return View("Edit", viewModel);
             }
         }
 
@@ -146,15 +204,18 @@ namespace TestKB.Controllers
             {
                 if (string.IsNullOrWhiteSpace(model.OldCategory) || string.IsNullOrWhiteSpace(model.NewCategory))
                 {
-                    return Json(new { success = false, message = "Old or new category name cannot be empty." });
+                    return Json(_errorHandlingService.HandleValidationErrors(
+                        new[] { "Eski veya yeni kategori adı boş olamaz." }));
                 }
+
                 _contentManager.UpdateCategory(model.OldCategory, model.NewCategory);
-                return Json(new { success = true });
+
+                return Json(_errorHandlingService.CreateSuccessResponse("Kategori başarıyla güncellendi."));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating category");
-                return Json(new { success = false, message = "An error occurred while updating the category." });
+                var error = _errorHandlingService.HandleException(ex, "Updating category");
+                return Json(error);
             }
         }
 
@@ -171,15 +232,18 @@ namespace TestKB.Controllers
                     string.IsNullOrWhiteSpace(model.OldSubCategory) ||
                     string.IsNullOrWhiteSpace(model.NewSubCategory))
                 {
-                    return Json(new { success = false, message = "Category or subcategory information cannot be empty." });
+                    return Json(_errorHandlingService.HandleValidationErrors(
+                        new[] { "Kategori veya alt kategori bilgisi boş olamaz." }));
                 }
+
                 _contentManager.UpdateSubCategory(model.Category, model.OldSubCategory, model.NewSubCategory);
-                return Json(new { success = true });
+
+                return Json(_errorHandlingService.CreateSuccessResponse("Alt kategori başarıyla güncellendi."));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating subcategory");
-                return Json(new { success = false, message = "An error occurred while updating the subcategory." });
+                var error = _errorHandlingService.HandleException(ex, "Updating subcategory");
+                return Json(error);
             }
         }
 
@@ -194,15 +258,18 @@ namespace TestKB.Controllers
             {
                 if (string.IsNullOrWhiteSpace(model.Category) || string.IsNullOrWhiteSpace(model.NewSubCategory))
                 {
-                    return Json(new { success = false, message = "Category or new subcategory information cannot be empty." });
+                    return Json(_errorHandlingService.HandleValidationErrors(
+                        new[] { "Kategori veya yeni alt kategori bilgisi boş olamaz." }));
                 }
+
                 _contentManager.AddSubCategory(model.Category, model.NewSubCategory);
-                return Json(new { success = true });
+
+                return Json(_errorHandlingService.CreateSuccessResponse("Alt kategori başarıyla eklendi."));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adding subcategory");
-                return Json(new { success = false, message = "An error occurred while adding the subcategory." });
+                var error = _errorHandlingService.HandleException(ex, "Adding subcategory");
+                return Json(error);
             }
         }
 
@@ -215,12 +282,12 @@ namespace TestKB.Controllers
             try
             {
                 var items = _contentManager.GetAllContentItems();
-                return Json(items);
+                return Json(new { success = true, data = items });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving content items");
-                return StatusCode(500, "An error occurred.");
+                var error = _errorHandlingService.HandleException(ex, "Retrieving content items");
+                return Json(error);
             }
         }
 
@@ -234,16 +301,21 @@ namespace TestKB.Controllers
                 string jsonFilePath = Path.Combine(_env.WebRootPath, "data.json");
                 if (!System.IO.File.Exists(jsonFilePath))
                 {
-                    return Content("JSON file not found.");
+                    TempData["ErrorMessage"] = "JSON dosyası bulunamadı.";
+                    return View((object)"");
                 }
+
                 string jsonContent = System.IO.File.ReadAllText(jsonFilePath);
                 string plainText = TestKB.Services.JsonToTextConverter.ConvertJsonToText(jsonContent);
+
                 return View((object)plainText);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error converting content");
-                return StatusCode(500, "An error occurred.");
+                var error = _errorHandlingService.HandleException(ex, "Converting content");
+
+                TempData["ErrorMessage"] = error.Message;
+                return View((object)"İçerik dönüştürülürken bir hata oluştu.");
             }
         }
 
@@ -258,15 +330,18 @@ namespace TestKB.Controllers
             {
                 if (string.IsNullOrWhiteSpace(model.Category))
                 {
-                    return Json(new { success = false, message = "Category name cannot be empty." });
+                    return Json(_errorHandlingService.HandleValidationErrors(
+                        new[] { "Kategori adı boş olamaz." }));
                 }
+
                 int removedCount = _contentManager.DeleteCategory(model.Category);
-                return Json(new { success = true, message = $"{removedCount} content items deleted." });
+
+                return Json(_errorHandlingService.CreateSuccessResponse($"{removedCount} içerik öğesi silindi."));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting category");
-                return Json(new { success = false, message = "An error occurred while deleting the category." });
+                var error = _errorHandlingService.HandleException(ex, "Deleting category");
+                return Json(error);
             }
         }
     }

@@ -1,7 +1,5 @@
-﻿document.addEventListener('DOMContentLoaded', function ()
-{
+﻿document.addEventListener('DOMContentLoaded', function () {
     // Global değişkenler
-    // Bu değişkenler, seçilen kategori/alt kategori ve JSON'dan çekilen içerikleri saklar.
     var oldCategoryValue = "";
     var oldSubCategoryValue = "";
     var allItems = allItemsJsonData;
@@ -11,58 +9,133 @@
     var subCategorySelect = document.getElementById('selectedSubCategory');
     var extendContentBox = document.getElementById('extendContent');
     var subCategoryContainer = document.getElementById('subCategoryContainer');
-
-    // Kullanıcının aktif olarak seçtiği alt kategoriyi tutan gizli input
     var hiddenSelectedSubCategory = document.getElementById('hiddenSelectedSubCategory');
 
     /**
-     * Belirli bir öğenin içine hata mesajı koyar.
-     * @param {string} elementId - Hata mesajının yazılacağı elementin ID'si
-     * @param {string} message - Gösterilecek hata metni
+     * Kullanıcıya bildirim mesajı gösterir
+     * @param {string} message - Gösterilecek mesaj
+     * @param {string} type - Mesaj tipi (success, error, warning, info)
+     * @param {number} duration - Mesajın görüntülenme süresi (ms)
      */
-    function setErrorText(elementId, message) {
-        document.getElementById(elementId).textContent = message;
+    function showNotification(message, type = 'success', duration = 3000) {
+        if (!message) return; // Boş mesajlar için gösterme
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = "alert";
+        alertDiv.innerHTML = message +
+            '<button type="button" class="close" data-dismiss="alert" aria-label="Kapat">' +
+            '<span aria-hidden="true">&times;</span></button>';
+
+        // Mevcut bildirimleri kaldır
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+
+        // Yeni bildirimi ekle
+        const container = document.querySelector('.container');
+        if (container) {
+            container.insertBefore(alertDiv, container.firstChild);
+
+            if (duration > 0) {
+                setTimeout(function () {
+                    alertDiv.remove();
+                }, duration);
+            }
+        }
     }
-    window.setErrorText = setErrorText;
+    window.showNotification = showNotification;
+
+    /**
+     * API çağrısı yapar ve hata işleme mantığı içerir
+     * @param {string} url - API endpoint'i
+     * @param {Object} options - Fetch API seçenekleri
+     * @param {Function} successCallback - Başarılı yanıt için callback fonksiyonu
+     * @param {string} errorContext - Hata durumunda gösterilecek bağlam
+     */
+    async function apiCall(url, options, successCallback, errorContext) {
+        try {
+            const response = await fetch(url, options);
+
+            // HTTP hata durumları için kontrol
+            if (!response.ok) {
+                showNotification(`${errorContext} sırasında bir hata oluştu: ${response.status} ${response.statusText}`, 'danger');
+                return null;
+            }
+
+            const data = await response.json();
+
+            // ErrorResponse formatındaki yanıtlar için kontrol
+            if (data && typeof data === 'object' && data.hasOwnProperty('success')) {
+                if (!data.success) {
+                    // API'dan dönen hata mesajını göster
+                    if (data.validationErrors && data.validationErrors.length > 0) {
+                        showNotification(data.validationErrors.join('<br>'), 'warning');
+                    } else {
+                        showNotification(data.message || `${errorContext} sırasında bir hata oluştu.`, 'danger');
+                    }
+                    return null;
+                }
+
+                // Başarılı yanıt için callback fonksiyonunu çağır
+                if (successCallback) {
+                    return successCallback(data);
+                }
+
+                return data;
+            }
+            else {
+                // Doğrudan veri döndüren API yanıtları için
+                if (successCallback) {
+                    return successCallback(data);
+                }
+                return data;
+            }
+        } catch (error) {
+            console.error(`Error during ${errorContext}:`, error);
+            showNotification(`${errorContext} sırasında bir hata oluştu.`, 'danger');
+            return null;
+        }
+    }
 
     /**
      * Sunucudan içerik öğelerini yeniden çeker.
      * @param {Function} [callback] - Veriler yüklendikten sonra çağrılacak fonksiyon
      */
     function refreshAllItems(callback) {
-        fetch('/Content/GetContentItems')
-            .then(res => res.json())
-            .then(updatedItems => {
-                allItems = updatedItems;
-                if (callback) callback();
-            })
-            .catch(error => console.error("Öğeler yenilenirken hata oluştu:", error));
+        apiCall(
+            '/Content/GetContentItems',
+            { method: 'GET' },
+            function (data) {
+                // GetContentItems başarılı yanıtı doğrudan dizi veya success:true ve data:[] formatında olabilir
+                if (Array.isArray(data)) {
+                    allItems = data;
+                    if (callback) callback();
+                } else if (data && data.data && Array.isArray(data.data)) {
+                    allItems = data.data;
+                    if (callback) callback();
+                } else {
+                    console.error("Beklenmeyen veri formatı:", data);
+                    showNotification("İçerik öğeleri beklenmeyen formatta.", "warning");
+                }
+            },
+            'İçerik öğeleri yüklenirken'
+        );
     }
     window.refreshAllItems = refreshAllItems;
 
     /**
      * Kategori seçildiğinde çağrılır.
-     * Kategoriye göre alt kategori alanını ve diğer ilgili alanları ayarlar.
      */
     window.onCategoryChange = function () {
-        setErrorText('editCategoryError', '');
         oldCategoryValue = categorySelect.value;
-
-        // Farklı bir kategori seçilince alt kategori seçim bilgisini sıfırla.
         hiddenSelectedSubCategory.value = "";
-
-        // Alt kategori alanını açar/kapatır
         subCategoryContainer.style.display = categorySelect.value ? 'block' : 'none';
 
-        // Sunucudan tekrar içerik yükleyip alt kategorileri yeniler
         refreshAllItems(function () {
-            // "Kategoriyi Düzenle" butonunu, sadece geçerli bir kategori varsa göster
             document.getElementById('editCategoryBtn').style.display =
                 categorySelect.value ? 'block' : 'none';
 
             populateSubCategories(categorySelect.value);
-
-            // Alt kategori seçimini temizler
             subCategorySelect.value = "";
             document.getElementById('editSubCategoryBtn').style.display = 'none';
             document.getElementById('contentDiv').style.display = 'none';
@@ -75,7 +148,6 @@
      */
     window.toggleEditCategory = function () {
         var editDiv = document.getElementById('editCategoryDiv');
-        // Kategori düzenleme alanı gizliyse açar, açıksa kapatır
         if (!editDiv.style.display || editDiv.style.display === 'none') {
             document.getElementById('editedCategory').value = categorySelect.value;
             editDiv.style.display = 'block';
@@ -88,49 +160,50 @@
      * Kategoriyi kaydetmek için çağrılır. Kullanıcı yeni kategori adını girdikten sonra "Kaydet" basar.
      */
     window.saveEditedCategory = function () {
-        setErrorText('editCategoryError', '');
         var newCategory = document.getElementById('editedCategory').value.trim();
         if (!newCategory) {
-            setErrorText('editCategoryError', "Kategori ismi boş olamaz.");
+            showNotification("Kategori ismi boş olamaz.", "warning");
             return;
         }
-        // Seçili option'ı günceller
-        for (var i = 0; i < categorySelect.options.length; i++) {
-            if (categorySelect.options[i].value === categorySelect.value) {
-                categorySelect.options[i].text = newCategory;
-                categorySelect.options[i].value = newCategory;
-                break;
-            }
-        }
-        // Kategori select değerini yeni isimle günceller
-        categorySelect.value = newCategory;
-        document.getElementById('editCategoryDiv').style.display = 'none';
 
-        // Sunucuya kategori değişikliği bilgisini gönderir
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        fetch('/Content/UpdateCategory', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token
+        apiCall(
+            '/Content/UpdateCategory',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    OldCategory: oldCategoryValue,
+                    NewCategory: newCategory
+                })
             },
-            body: JSON.stringify({ OldCategory: oldCategoryValue, NewCategory: newCategory })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    setErrorText('editCategoryError', data.message || "Kategori güncelleme hatası.");
-                } else {
-                    oldCategoryValue = newCategory;
-                    // Kategoriler güncellendikten sonra tekrar alt kategorileri çek
-                    refreshAllItems(function () {
-                        populateSubCategories(newCategory);
-                    });
+            function (data) {
+                // Seçili option'ı günceller
+                for (var i = 0; i < categorySelect.options.length; i++) {
+                    if (categorySelect.options[i].value === categorySelect.value) {
+                        categorySelect.options[i].text = newCategory;
+                        categorySelect.options[i].value = newCategory;
+                        break;
+                    }
                 }
-            })
-            .catch(error => {
-                setErrorText('editCategoryError', "Kategori güncellenirken bir hata oluştu.");
-            });
+
+                // Kategori select değerini yeni isimle günceller
+                categorySelect.value = newCategory;
+                document.getElementById('editCategoryDiv').style.display = 'none';
+                oldCategoryValue = newCategory;
+
+                // Kategoriler güncellendikten sonra tekrar alt kategorileri çek
+                refreshAllItems(function () {
+                    populateSubCategories(newCategory);
+                });
+
+                showNotification(data.message || "Kategori başarıyla güncellendi.", "success");
+            },
+            'Kategori güncellenirken'
+        );
     };
 
     /**
@@ -167,7 +240,6 @@
      * İçeriği getirir ve sayfada gösterir.
      */
     window.onSubCategoryChange = function () {
-        setErrorText('editSubCategoryError', '');
         oldSubCategoryValue = subCategorySelect.value;
 
         // Kullanıcının yeni seçtiği alt kategoriyi gizli input'a yazar
@@ -208,52 +280,50 @@
      * Alt kategori adını kaydeder. Kullanıcı "Kaydet"e bastığında çağrılır.
      */
     window.saveEditedSubCategory = function () {
-        setErrorText('editSubCategoryError', '');
         var newSubCategory = document.getElementById('editedSubCategory').value.trim();
         if (!newSubCategory) {
-            setErrorText('editSubCategoryError', "Alt kategori ismi boş olamaz.");
+            showNotification("Alt kategori ismi boş olamaz.", "warning");
             return;
         }
-        // Mevcut seçili alt kategoriyi UI'da günceller
-        for (var i = 0; i < subCategorySelect.options.length; i++) {
-            if (subCategorySelect.options[i].value === subCategorySelect.value) {
-                subCategorySelect.options[i].text = newSubCategory;
-                subCategorySelect.options[i].value = newSubCategory;
-                break;
-            }
-        }
-        subCategorySelect.value = newSubCategory;
-        document.getElementById('editSubCategoryDiv').style.display = 'none';
 
-        // Sunucuya alt kategori güncelleme isteği gönder
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        fetch('/Content/UpdateSubCategory', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token
+        apiCall(
+            '/Content/UpdateSubCategory',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    Category: categorySelect.value,
+                    OldSubCategory: oldSubCategoryValue,
+                    NewSubCategory: newSubCategory
+                })
             },
-            body: JSON.stringify({
-                Category: categorySelect.value,
-                OldSubCategory: oldSubCategoryValue,
-                NewSubCategory: newSubCategory
-            })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    setErrorText('editSubCategoryError', data.message || "Alt kategori güncelleme hatası.");
-                } else {
-                    hiddenSelectedSubCategory.value = newSubCategory;
-                    oldSubCategoryValue = newSubCategory;
-                    refreshAllItems(function () {
-                        populateSubCategories(categorySelect.value);
-                    });
+            function (data) {
+                // Mevcut seçili alt kategoriyi UI'da günceller
+                for (var i = 0; i < subCategorySelect.options.length; i++) {
+                    if (subCategorySelect.options[i].value === subCategorySelect.value) {
+                        subCategorySelect.options[i].text = newSubCategory;
+                        subCategorySelect.options[i].value = newSubCategory;
+                        break;
+                    }
                 }
-            })
-            .catch(error => {
-                setErrorText('editSubCategoryError', "Alt kategori güncellenirken bir hata oluştu.");
-            });
+
+                subCategorySelect.value = newSubCategory;
+                document.getElementById('editSubCategoryDiv').style.display = 'none';
+                hiddenSelectedSubCategory.value = newSubCategory;
+                oldSubCategoryValue = newSubCategory;
+
+                refreshAllItems(function () {
+                    populateSubCategories(categorySelect.value);
+                });
+
+                showNotification(data.message || "Alt kategori başarıyla güncellendi.", "success");
+            },
+            'Alt kategori güncellenirken'
+        );
     };
 
     /**
@@ -273,9 +343,10 @@
         var newSubCatInput = document.getElementById('newSubCategoryInput');
         var newSubCatValue = newSubCatInput.value.trim();
         if (!newSubCatValue) {
-            setErrorText('editSubCategoryError', "Yeni alt kategori ismi boş olamaz.");
+            showNotification("Yeni alt kategori ismi boş olamaz.", "warning");
             return;
         }
+
         // Var olan alt kategori listesinde aynı isim varsa eklemeye izin verme
         var exists = false;
         for (var i = 0; i < subCategorySelect.options.length; i++) {
@@ -284,59 +355,58 @@
                 break;
             }
         }
+
         if (exists) {
-            setErrorText('editSubCategoryError', "Bu alt kategori zaten mevcut.");
+            showNotification("Bu alt kategori zaten mevcut.", "warning");
             return;
         }
-        // Sunucuya yeni alt kategori ekleme isteği gönder
+
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        fetch('/Content/AddSubCategory', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token
+        apiCall(
+            '/Content/AddSubCategory',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    Category: categorySelect.value,
+                    NewSubCategory: newSubCatValue
+                })
             },
-            body: JSON.stringify({
-                Category: categorySelect.value,
-                NewSubCategory: newSubCatValue
-            })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    setErrorText('editSubCategoryError', data.message || "Yeni alt kategori eklenirken hata oluştu.");
-                } else {
-                    // Yeni alt kategoriyi <select>'e ekle
-                    var newOption = document.createElement('option');
-                    newOption.value = newSubCatValue;
-                    newOption.textContent = newSubCatValue;
-                    subCategorySelect.appendChild(newOption);
-                    subCategorySelect.value = newSubCatValue;
+            function (data) {
+                // Yeni alt kategoriyi <select>'e ekle
+                var newOption = document.createElement('option');
+                newOption.value = newSubCatValue;
+                newOption.textContent = newSubCatValue;
+                subCategorySelect.appendChild(newOption);
+                subCategorySelect.value = newSubCatValue;
 
-                    // Seçili alt kategori olarak güncelle
-                    hiddenSelectedSubCategory.value = newSubCatValue;
+                // Seçili alt kategori olarak güncelle
+                hiddenSelectedSubCategory.value = newSubCatValue;
 
-                    refreshAllItems(function () {
-                        populateSubCategories(categorySelect.value);
-                        onSubCategoryChange();
-                    });
-                    document.getElementById('addSubCategoryDiv').style.display = 'none';
-                    newSubCatInput.value = "";
-                }
-            })
-            .catch(error => {
-                setErrorText('editSubCategoryError', "Yeni alt kategori eklenirken bir hata oluştu.");
-            });
+                refreshAllItems(function () {
+                    populateSubCategories(categorySelect.value);
+                    onSubCategoryChange();
+                });
+
+                document.getElementById('addSubCategoryDiv').style.display = 'none';
+                newSubCatInput.value = "";
+
+                showNotification(data.message || "Yeni alt kategori başarıyla eklendi.", "success");
+            },
+            'Yeni alt kategori eklenirken'
+        );
     };
 
     /**
      * Kategori silme işlemine başlamak için kullanıcıdan onay ister.
      */
     window.confirmDeleteCategory = function () {
-        setErrorText('deleteCategoryError', '');
         var category = document.getElementById('deleteCategorySelect').value;
         if (!category) {
-            setErrorText('deleteCategoryError', "Lütfen silinecek kategoriyi seçiniz.");
+            showNotification("Lütfen silinecek kategoriyi seçiniz.", "warning");
             return;
         }
         document.getElementById('inlineDeleteConfirm').style.display = 'block';
@@ -356,39 +426,117 @@
         var select = document.getElementById('deleteCategorySelect');
         var category = select.value;
         document.getElementById('inlineDeleteConfirm').style.display = 'none';
-        setErrorText('deleteCategoryError', '');
 
         var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        fetch('/Content/DeleteCategory', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token
+        apiCall(
+            '/Content/DeleteCategory',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ Category: category })
             },
-            body: JSON.stringify({ Category: category })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    setErrorText('deleteCategoryError', data.message || "Kategori silinirken hata oluştu.");
-                } else {
-                    // Başarılı silme sonrası kullanıcıya mesaj gösterip sayfayı yenile
-                    var alertDiv = document.createElement('div');
-                    alertDiv.className = "alert alert-success alert-dismissible fade show";
-                    alertDiv.role = "alert";
-                    alertDiv.innerHTML = "Kategori silindi." +
-                        '<button type="button" class="close" data-dismiss="alert" aria-label="Kapat">' +
-                        '<span aria-hidden="true">&times;</span></button>';
-                    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
-                    setTimeout(function () {
-                        location.reload();
-                    }, 2000);
-                }
-            })
-            .catch(error => {
-                setErrorText('deleteCategoryError', "Kategori silinirken bir hata oluştu.");
-            });
+            function (data) {
+                showNotification(data.message || "Kategori başarıyla silindi.", "success");
+                setTimeout(function () {
+                    location.reload();
+                }, 2000);
+            },
+            'Kategori silinirken'
+        );
     };
+
+    // Form validation for new content
+    const newContentForm = document.getElementById('newContentForm');
+    if (newContentForm) {
+        newContentForm.addEventListener('submit', function (event) {
+            let hasErrors = false;
+            let errorMessages = [];
+
+            // Validate Category
+            const newCategory = document.getElementById('newCategory').value.trim();
+            if (!newCategory) {
+                errorMessages.push('Kategori ismi boş olamaz.');
+                hasErrors = true;
+            }
+
+            // Validate SubCategory
+            const newSubCategory = document.getElementById('newSubCategory').value.trim();
+            if (!newSubCategory) {
+                errorMessages.push('Alt kategori ismi boş olamaz.');
+                hasErrors = true;
+            }
+
+            // Validate Content
+            const newContent = document.getElementById('newContent').value.trim();
+            if (!newContent) {
+                errorMessages.push('İçerik boş olamaz.');
+                hasErrors = true;
+            }
+
+            // Check for duplicate categories (using the allItems array)
+            if (newCategory && allItems && Array.isArray(allItems)) {
+                const categoryExists = allItems.some(item =>
+                    item.category && item.category.toLowerCase() === newCategory.toLowerCase());
+
+                if (categoryExists) {
+                    errorMessages.push(`"${newCategory}" kategorisi zaten mevcut.`);
+                    hasErrors = true;
+                }
+
+                // Check for duplicate subcategories within the same category
+                if (newSubCategory && categoryExists) {
+                    const subcategoryExists = allItems.some(item =>
+                        item.category && item.category.toLowerCase() === newCategory.toLowerCase() &&
+                        item.subCategory && item.subCategory.toLowerCase() === newSubCategory.toLowerCase());
+
+                    if (subcategoryExists) {
+                        errorMessages.push(`"${newCategory}" kategorisinde "${newSubCategory}" alt kategorisi zaten mevcut.`);
+                        hasErrors = true;
+                    }
+                }
+            }
+
+            if (hasErrors) {
+                event.preventDefault(); // Prevent form submission
+                showNotification(errorMessages.join('<br>'), 'warning');
+            }
+        });
+    }
+
+    // Validation for extend content form
+    const extendContentForm = document.getElementById('extendContentForm');
+    if (extendContentForm) {
+        extendContentForm.addEventListener('submit', function (event) {
+            let hasErrors = false;
+            let errorMessages = [];
+
+            // Validate Category selection
+            if (!categorySelect.value) {
+                errorMessages.push('Lütfen bir kategori seçiniz.');
+                hasErrors = true;
+            }
+
+            // Validate SubCategory selection
+            if (!subCategorySelect.value) {
+                errorMessages.push('Lütfen bir alt kategori seçiniz.');
+                hasErrors = true;
+            }
+
+            // Validate Content
+            if (extendContentBox && !extendContentBox.value.trim()) {
+                errorMessages.push('İçerik boş olamaz.');
+                hasErrors = true;
+            }
+
+            if (hasErrors) {
+                event.preventDefault(); // Prevent form submission
+                showNotification(errorMessages.join('<br>'), 'warning');
+            }
+        });
+    }
 
     // Sayfa ilk yüklendiğinde, eğer seçili bir kategori varsa alt kategorileri doldur.
     if (categorySelect && categorySelect.value) {
@@ -403,6 +551,17 @@
                 onSubCategoryChange();
             }
         });
+    }
+
+    // Display server-side messages if they exist
+    if (typeof tempData !== 'undefined') {
+        if (tempData.errorMessage) {
+            showNotification(tempData.errorMessage, 'danger');
+        }
+
+        if (tempData.successMessage) {
+            showNotification(tempData.successMessage, 'success');
+        }
     }
 
     /**

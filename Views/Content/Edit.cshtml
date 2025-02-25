@@ -4,52 +4,42 @@
     Layout = "_Layout";
     var allItemsJson = ViewBag.AllItemsJson as string ?? "[]";
     var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+    var validationErrors = TempData["ValidationErrors"] as IEnumerable<string>;
+    var activeTab = TempData["ActiveTab"] as string ?? "newContent";
 }
 <!-- JSON verisini JS tarafına aktarmak için -->
 <script type="text/javascript">
     var allItemsJsonData = @Html.Raw(allItemsJson);
+    // TempData değerlerini JS'e aktar
+    var tempData = {
+        successMessage: '@Html.Raw(successMessage?.Replace("'", "\\'"))',
+        errorMessage: '@Html.Raw(errorMessage?.Replace("'", "\\'"))',
+        activeTab: '@activeTab'
+    };
 </script>
 <script src="~/js/edit.js"></script>
 
 <div class="container mt-4">
-    @* Başarılı işlem mesajı varsa göster ve 2 saniye sonra sayfayı yenile *@
-    @if (!string.IsNullOrEmpty(successMessage))
-    {
-        <script type="text/javascript">
-            document.addEventListener('DOMContentLoaded', function () {
-                var alertDiv = document.createElement('div');
-                alertDiv.className = "alert alert-success alert-dismissible fade show";
-                alertDiv.role = "alert";
-                alertDiv.innerHTML = "@successMessage" +
-                    '<button type="button" class="close" data-dismiss="alert" aria-label="Kapat">' +
-                    '<span aria-hidden="true">&times;</span></button>';
-                document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
-                setTimeout(function () {
-                    location.reload();
-                }, 2000);
-            });
-        </script>
-    }
-
     <h2 class="text-center mb-4">İçerik Düzenle</h2>
     <div class="card mx-auto" style="max-width: 900px;">
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs justify-content-center" id="myTab" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link active" id="newContent-tab" data-toggle="tab" href="#newContentSection"
-                       role="tab" aria-controls="newContentSection" aria-selected="true">
+                    <a class="nav-link @(activeTab == "newContent" ? "active" : "")" id="newContent-tab" data-toggle="tab" href="#newContentSection"
+                       role="tab" aria-controls="newContentSection" aria-selected="@(activeTab == "newContent" ? "true" : "false")">
                         Yeni İçerik Ekle
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="extendContent-tab" data-toggle="tab" href="#extendContentSection"
-                       role="tab" aria-controls="extendContentSection" aria-selected="false">
+                    <a class="nav-link @(activeTab == "extendContent" ? "active" : "")" id="extendContent-tab" data-toggle="tab" href="#extendContentSection"
+                       role="tab" aria-controls="extendContentSection" aria-selected="@(activeTab == "extendContent" ? "true" : "false")">
                         Var Olan İçeriği Düzenle
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="deleteCategory-tab" data-toggle="tab" href="#deleteCategorySection"
-                       role="tab" aria-controls="deleteCategorySection" aria-selected="false">
+                    <a class="nav-link @(activeTab == "deleteCategory" ? "active" : "")" id="deleteCategory-tab" data-toggle="tab" href="#deleteCategorySection"
+                       role="tab" aria-controls="deleteCategorySection" aria-selected="@(activeTab == "deleteCategory" ? "true" : "false")">
                         Kategori Sil
                     </a>
                 </li>
@@ -58,7 +48,7 @@
         <div class="card-body">
             <div class="tab-content" id="myTabContent">
                 <!-- Yeni içerik ekleme bölümü -->
-                <div class="tab-pane fade show active" id="newContentSection"
+                <div class="tab-pane fade @(activeTab == "newContent" ? "show active" : "")" id="newContentSection"
                      role="tabpanel" aria-labelledby="newContent-tab">
                     <form asp-action="EditNewContent" method="post" id="newContentForm">
                         @Html.AntiForgeryToken()
@@ -66,19 +56,19 @@
                             <label asp-for="NewContent.Category" class="font-weight-bold">Yeni Kategori</label>
                             <input asp-for="NewContent.Category" class="form-control" id="newCategory"
                                    placeholder="Kategori ismi giriniz" />
-                            <span id="newCategoryError" class="text-danger"></span>
+                            <!-- Removed inline error message here -->
                         </div>
                         <div class="form-group">
                             <label asp-for="NewContent.SubCategory" class="font-weight-bold">Yeni Alt Kategori</label>
                             <input asp-for="NewContent.SubCategory" class="form-control" id="newSubCategory"
                                    placeholder="Alt kategori ismi giriniz" />
-                            <span id="newSubCategoryError" class="text-danger"></span>
+                            <!-- Removed inline error message here -->
                         </div>
                         <div class="form-group">
                             <label asp-for="NewContent.Content" class="font-weight-bold">İçerik</label>
                             <textarea asp-for="NewContent.Content" class="form-control" id="newContent"
                                       rows="5" placeholder="İçerik giriniz"></textarea>
-                            <span id="newContentError" class="text-danger"></span>
+                            <!-- Removed inline error message here -->
                         </div>
                         <button type="submit" class="btn btn-light border-success text-success">
                             <i class="fa fa-check mr-1"></i> Yeni İçerik Ekle
@@ -87,7 +77,7 @@
                 </div>
 
                 <!-- Var olan içeriği düzenleme bölümü -->
-                <div class="tab-pane fade" id="extendContentSection" role="tabpanel"
+                <div class="tab-pane fade @(activeTab == "extendContent" ? "show active" : "")" id="extendContentSection" role="tabpanel"
                      aria-labelledby="extendContent-tab">
                     <form asp-action="ExtendContent" method="post" id="extendContentForm">
                         @Html.AntiForgeryToken()
@@ -118,7 +108,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <span class="text-danger" id="editCategoryError"></span>
+                            <!-- Removed inline error message here -->
                         </div>
 
                         <!-- Kategori düzenleme alanı (gizli) -->
@@ -161,7 +151,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <span class="text-danger" id="editSubCategoryError"></span>
+                                <!-- Removed inline error message here -->
                             </div>
 
                             <!-- Gizli alan: kullanıcı alt kategori seçimini tutar -->
@@ -201,7 +191,7 @@
                                 <textarea asp-for="ExtendContent.Content" class="form-control"
                                           id="extendContent" rows="5"
                                           placeholder="İçerik ekleyiniz"></textarea>
-                                <span id="extendContentError" class="text-danger"></span>
+                                <!-- Removed inline error message here -->
                             </div>
                             <button type="submit" class="btn btn-light border-primary text-primary"
                                     id="submitContentBtn" style="display:none;">
@@ -212,7 +202,7 @@
                 </div>
 
                 <!-- Kategori silme bölümü -->
-                <div class="tab-pane fade" id="deleteCategorySection" role="tabpanel"
+                <div class="tab-pane fade @(activeTab == "deleteCategory" ? "show active" : "")" id="deleteCategorySection" role="tabpanel"
                      aria-labelledby="deleteCategory-tab">
                     <div class="text-center">
                         <form>
@@ -228,7 +218,7 @@
                                         }
                                     }
                                 </select>
-                                <span class="text-danger" id="deleteCategoryError"></span>
+                                <!-- Removed inline error message here -->
                             </div>
                             <button type="button" class="btn btn-light border-danger text-danger"
                                     onclick="confirmDeleteCategory()">
@@ -252,3 +242,9 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
