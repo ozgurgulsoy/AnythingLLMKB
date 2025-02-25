@@ -8,6 +8,7 @@
     var validationErrors = TempData["ValidationErrors"] as IEnumerable<string>;
     var activeTab = TempData["ActiveTab"] as string ?? "newContent";
 }
+
 <!-- JSON verisini JS tarafına aktarmak için -->
 <script type="text/javascript">
     var allItemsJsonData = @Html.Raw(allItemsJson);
@@ -18,7 +19,8 @@
         activeTab: '@activeTab'
     };
 </script>
-<script src="~/js/edit.js"></script>
+
+<!-- Removed reference to edit.js here -->
 
 <div class="container mt-4">
     <h2 class="text-center mb-4">İçerik Düzenle</h2>

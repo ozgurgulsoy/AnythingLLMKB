@@ -1,0 +1,24 @@
+[
+  {
+    "outputFileName": "wwwroot/js/site.min.js",
+    "inputFiles": [
+      "wwwroot/js/modules/notifications.js",
+      "wwwroot/js/modules/api.js",
+      "wwwroot/js/modules/categoryManager.js",
+      "wwwroot/js/modules/subcategoryManager.js",
+      "wwwroot/js/modules/formValidation.js",
+      "wwwroot/js/main.js"
+    ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/css/site.min.css",
+    "inputFiles": [
+      "wwwroot/css/site.css"
+    ]
+  }
+]
