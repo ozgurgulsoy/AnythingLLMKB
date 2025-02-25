@@ -1,4 +1,5 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+﻿document.addEventListener('DOMContentLoaded', function ()
+{
     // Global değişkenler
     // Bu değişkenler, seçilen kategori/alt kategori ve JSON'dan çekilen içerikleri saklar.
     var oldCategoryValue = "";
