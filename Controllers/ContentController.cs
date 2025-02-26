@@ -1,9 +1,6 @@
 ﻿// Controllers/ContentController.cs
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 using TestKB.Models;
 using TestKB.Services;
 using TestKB.ViewModels;
