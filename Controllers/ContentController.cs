@@ -1,62 +1,34 @@
-﻿// Controllers/ContentController.cs
+﻿
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 using TestKB.Models;
 using TestKB.Models.ViewModels;
-using TestKB.Services;
 using TestKB.Services.Interfaces;
 
 namespace TestKB.Controllers
 {
-    /// <summary>
-    /// İçerik işlemlerini yöneten denetleyici.
-    /// </summary>
-    public class ContentController : Controller
+    public class ContentController(
+        IContentManager contentManager,
+        IWebHostEnvironment env,
+        ILogger<ContentController> logger,
+        IErrorHandlingService errorHandlingService,
+        IContentService contentService)
+        : Controller
     {
-        private readonly IContentManager _contentManager;
-        private readonly IWebHostEnvironment _env;
-        private readonly ILogger<ContentController> _logger;
-        private readonly IErrorHandlingService _errorHandlingService;
-        private readonly IContentService _contentService;
-
-        /// <summary>
-        /// ContentController sınıfının yapıcı metodu.
-        /// </summary>
-        public ContentController(
-            IContentManager contentManager,
-            IWebHostEnvironment env,
-            ILogger<ContentController> logger,
-            IErrorHandlingService errorHandlingService,
-            IContentService contentService)
-        {
-            _contentManager = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
-            _env = env ?? throw new ArgumentNullException(nameof(env));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
-            _contentService = contentService ?? throw new ArgumentNullException(nameof(contentService));
-        }
-
-        /// <summary>
-        /// Departman seçimi görünümünü döndürür.
-        /// </summary>
+        private readonly IContentManager _contentManager = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
+        private readonly IWebHostEnvironment _env = env ?? throw new ArgumentNullException(nameof(env));
+        private readonly ILogger<ContentController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly IErrorHandlingService _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
+        private readonly IContentService _contentService = contentService ?? throw new ArgumentNullException(nameof(contentService));
+        
         public IActionResult DepartmentSelect() => View();
-
-        /// <summary>
-        /// Seçilen departmana göre yönlendirme yapar.
-        /// </summary>
+        
         [HttpPost]
         public IActionResult SelectDepartment(Department department)
         {
             return RedirectToAction("Index", new { dept = department });
         }
 
-        /// <summary>
-        /// Ana sayfa içeriğini, isteğe bağlı kategori filtresiyle görüntüler.
-        /// </summary>
         public async Task<IActionResult> Index(string category, Department? dept)
         {
             try
@@ -78,9 +50,6 @@ namespace TestKB.Controllers
             }
         }
 
-        /// <summary>
-        /// Düzenleme sayfasını yükler ve gerekli view modeli oluşturur.
-        /// </summary>
         [HttpGet]
         [ResponseCache(NoStore = true, Duration = 0)]
         public async Task<IActionResult> Edit(string selectedCategory, string selectedSubCategory)
@@ -120,9 +89,6 @@ namespace TestKB.Controllers
             }
         }
 
-        /// <summary>
-        /// Yeni içerik ekleme işlemini gerçekleştirir.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditNewContent([Bind(Prefix = "NewContent")] NewContentViewModel model)
@@ -163,9 +129,6 @@ namespace TestKB.Controllers
             }
         }
 
-        /// <summary>
-        /// Mevcut içeriği günceller.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ExtendContent([Bind(Prefix = "ExtendContent")] ExtendContentViewModel model)
@@ -187,7 +150,6 @@ namespace TestKB.Controllers
 
                     _logger.LogWarning("ModelState hataları: {Errors}", string.Join("; ", validationErrors));
                     
-                    // Get fresh data for the view
                     var freshItems = await _contentService.GetAllAsync(true);
                     var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), model);
                     ViewBag.AllItemsJson = JsonSerializer.Serialize(freshItems);
@@ -213,7 +175,6 @@ namespace TestKB.Controllers
 
                 TempData["ErrorMessage"] = error.Message;
                 
-                // Get fresh data for the view
                 var freshItems = await _contentService.GetAllAsync(true);
                 var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), model);
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(freshItems);
@@ -222,9 +183,6 @@ namespace TestKB.Controllers
             }
         }
 
-        /// <summary>
-        /// Kategori güncelleme işlemini gerçekleştirir.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateCategory([FromBody] UpdateCategoryViewModel model)
@@ -234,7 +192,7 @@ namespace TestKB.Controllers
                 if (string.IsNullOrWhiteSpace(model.OldCategory) || string.IsNullOrWhiteSpace(model.NewCategory))
                 {
                     return Json(_errorHandlingService.HandleValidationErrors(
-                        new[] { "Eski veya yeni kategori adı boş olamaz." }));
+                        ["Eski veya yeni kategori adı boş olamaz."]));
                 }
 
                 await _contentManager.UpdateCategoryAsync(model.OldCategory, model.NewCategory);
@@ -247,10 +205,7 @@ namespace TestKB.Controllers
                 return Json(error);
             }
         }
-
-        /// <summary>
-        /// Alt kategori güncelleme işlemini gerçekleştirir.
-        /// </summary>
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateSubCategory([FromBody] UpdateSubCategoryViewModel model)
@@ -262,7 +217,7 @@ namespace TestKB.Controllers
                     string.IsNullOrWhiteSpace(model.NewSubCategory))
                 {
                     return Json(_errorHandlingService.HandleValidationErrors(
-                        new[] { "Kategori veya alt kategori bilgisi boş olamaz." }));
+                        ["Kategori veya alt kategori bilgisi boş olamaz."]));
                 }
 
                 await _contentManager.UpdateSubCategoryAsync(model.Category, model.OldSubCategory, model.NewSubCategory);
@@ -276,9 +231,6 @@ namespace TestKB.Controllers
             }
         }
 
-        /// <summary>
-        /// Yeni alt kategori ekleme işlemini gerçekleştirir.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddSubCategory([FromBody] AddSubCategoryViewModel model)
@@ -288,7 +240,7 @@ namespace TestKB.Controllers
                 if (string.IsNullOrWhiteSpace(model.Category) || string.IsNullOrWhiteSpace(model.NewSubCategory))
                 {
                     return Json(_errorHandlingService.HandleValidationErrors(
-                        new[] { "Kategori veya yeni alt kategori bilgisi boş olamaz." }));
+                        ["Kategori veya yeni alt kategori bilgisi boş olamaz."]));
                 }
 
                 await _contentManager.AddSubCategoryAsync(model.Category, model.NewSubCategory);
@@ -302,9 +254,6 @@ namespace TestKB.Controllers
             }
         }
 
-        /// <summary>
-        /// Tüm içerik öğelerini JSON formatında döndürür.
-        /// </summary>
         [HttpGet]
         [ResponseCache(Duration = 0, NoStore = true)]
         public async Task<IActionResult> GetContentItems()
@@ -321,22 +270,19 @@ namespace TestKB.Controllers
             }
         }
 
-        /// <summary>
-        /// JSON dosyasındaki içeriği dönüştürüp görüntüleyen sayfayı yükler.
-        /// </summary>
         public async Task<IActionResult> ConvertedContent()
         {
             try
             {
-                string jsonFilePath = Path.Combine(_env.WebRootPath, "data.json");
+                var jsonFilePath = Path.Combine(_env.WebRootPath, "data.json");
                 if (!System.IO.File.Exists(jsonFilePath))
                 {
                     TempData["ErrorMessage"] = "JSON dosyası bulunamadı.";
                     return View((object)"");
                 }
 
-                string jsonContent = await System.IO.File.ReadAllTextAsync(jsonFilePath);
-                string plainText = TestKB.Services.JsonToTextConverter.ConvertJsonToText(jsonContent);
+                var jsonContent = await System.IO.File.ReadAllTextAsync(jsonFilePath);
+                var plainText = Services.JsonToTextConverter.ConvertJsonToText(jsonContent);
 
                 return View((object)plainText);
             }
@@ -348,10 +294,7 @@ namespace TestKB.Controllers
                 return View((object)"İçerik dönüştürülürken bir hata oluştu.");
             }
         }
-
-        /// <summary>
-        /// Belirtilen kategoriye ait içerik öğelerini siler.
-        /// </summary>
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCategory([FromBody] DeleteCategoryViewModel model)
@@ -361,10 +304,10 @@ namespace TestKB.Controllers
                 if (string.IsNullOrWhiteSpace(model.Category))
                 {
                     return Json(_errorHandlingService.HandleValidationErrors(
-                        new[] { "Kategori adı boş olamaz." }));
+                        ["Kategori adı boş olamaz."]));
                 }
 
-                int removedCount = await _contentManager.DeleteCategoryAsync(model.Category);
+                var removedCount = await _contentManager.DeleteCategoryAsync(model.Category);
 
                 return Json(_errorHandlingService.CreateSuccessResponse($"{removedCount} içerik öğesi silindi."));
             }
