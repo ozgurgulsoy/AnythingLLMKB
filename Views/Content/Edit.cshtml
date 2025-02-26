@@ -7,23 +7,36 @@
     var errorMessage = TempData["ErrorMessage"] as string;
     var validationErrors = TempData["ValidationErrors"] as IEnumerable<string>;
     var activeTab = TempData["ActiveTab"] as string ?? "newContent";
+    var refreshTime = ViewBag.LastRefreshedTime ?? DateTime.Now.ToString("HH:mm:ss.fff");
 }
+
+<!-- Add a hidden timestamp to track when the data was last refreshed -->
+<input type="hidden" id="dataRefreshTime" value="@refreshTime" />
 
 <!-- JSON verisini JS tarafına aktarmak için -->
 <script type="text/javascript">
+    // Force refresh the data on page load
     var allItemsJsonData = @Html.Raw(allItemsJson);
+
     // TempData değerlerini JS'e aktar
     var tempData = {
         successMessage: '@Html.Raw(successMessage?.Replace("'", "\\'"))',
         errorMessage: '@Html.Raw(errorMessage?.Replace("'", "\\'"))',
         activeTab: '@activeTab'
     };
-</script>
 
-<!-- Removed reference to edit.js here -->
+    // Force cache busting for all AJAX calls
+    function addCacheBuster(url) {
+        return url + (url.indexOf('?') >= 0 ? '&' : '?') + '_=' + new Date().getTime();
+    }
+</script>
 
 <div class="container mt-4">
     <h2 class="text-center mb-4">İçerik Düzenle</h2>
+
+    <!-- Debug info (can be removed in production) -->
+    <div class="small text-muted mb-2">Son Veri Güncelleme: @refreshTime</div>
+
     <div class="card mx-auto" style="max-width: 900px;">
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs justify-content-center" id="myTab" role="tablist">
@@ -96,7 +109,7 @@
                                         foreach (var cat in Model.ExistingCategories)
                                         {
                                             var isSelected = cat.Equals(Model.ExtendContent.SelectedCategory ?? "",
-                                            StringComparison.OrdinalIgnoreCase);
+                                                StringComparison.OrdinalIgnoreCase);
                                             <option value="@cat" selected="@(isSelected ? "selected" : null)">@cat</option>
                                         }
                                     }
@@ -249,4 +262,33 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        // Force reload any stale data in edit mode
+        $(document).ready(function() {
+            // Add cache busting to any AJAX calls
+            $(document).ajaxSend(function(e, xhr) {
+                xhr.setRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                xhr.setRequestHeader("Pragma", "no-cache");
+                xhr.setRequestHeader("Expires", "0");
+            });
+
+            // Since we're on the edit page, disable browser back-button cache
+            window.onpageshow = function(event) {
+                if (event.persisted) {
+                    window.location.reload();
+                }
+            };
+
+            // Add timestamp to all API calls
+            const originalFetch = window.fetch;
+            window.fetch = function() {
+                if (arguments[0].indexOf('?') > -1) {
+                    arguments[0] += '&_=' + new Date().getTime();
+                } else {
+                    arguments[0] += '?_=' + new Date().getTime();
+                }
+                return originalFetch.apply(this, arguments);
+            };
+        });
+    </script>
 }
