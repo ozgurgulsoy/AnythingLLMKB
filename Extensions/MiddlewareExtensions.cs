@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using TestKB.Middleware;
 
-namespace TestKB.Middleware
+namespace TestKB.Extensions
 {
     /// <summary>
     /// Middleware extension metotları.

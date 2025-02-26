@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using TestKB.Services;
+using TestKB.Services.Interfaces;
 
 namespace TestKB.Middleware
 {

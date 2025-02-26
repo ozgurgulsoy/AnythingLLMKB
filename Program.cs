@@ -3,6 +3,8 @@ using TestKB.Middleware;
 using TestKB.Repositories;
 using TestKB.Services;
 using Microsoft.Extensions.Caching.Memory;
+using TestKB.Extensions;
+using TestKB.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 

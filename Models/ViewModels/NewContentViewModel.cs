@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace TestKB.ViewModels
+namespace TestKB.Models.ViewModels
 {
     public class NewContentViewModel
     {

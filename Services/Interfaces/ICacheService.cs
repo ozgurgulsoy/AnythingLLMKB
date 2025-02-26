@@ -1,7 +1,6 @@
 ﻿// Services/ICacheService.cs
-using System;
 
-namespace TestKB.Services
+namespace TestKB.Services.Interfaces
 {
     /// <summary>
     /// Uygulama genelinde önbellek işlemlerini yönetmek için servis arayüzü.

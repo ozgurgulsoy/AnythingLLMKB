@@ -1,16 +1,18 @@
-﻿// Services/ContentManager.cs
+﻿
+// Services/ContentManager.cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TestKB.Models;
-using TestKB.ViewModels;
+using TestKB.Models.ViewModels;
+using TestKB.Services.Interfaces;
 
 namespace TestKB.Services
 {
     /// <summary>
-    /// İçerik verilerini işlemek ve yönetmek için kullanılan servis.
+    /// İçerik iş mantığı ve görünüm modeli dönüşümlerinden sorumlu servis
     /// </summary>
     public class ContentManager : IContentManager
     {
@@ -19,14 +21,9 @@ namespace TestKB.Services
         private readonly ILogger<ContentManager> _logger;
 
         // Önbellek anahtarı önekleri
-        private const string CONTENT_LIST_CACHE_PREFIX = "ContentList";
-        private const string EDIT_CONTENT_CACHE_PREFIX = "EditContent";
         private const string CATEGORIES_CACHE_KEY = "Categories";
-
-        /// <summary>
-        /// ContentManager sınıfının yapıcı metodu.
-        /// </summary>
-        /// <param name="contentService">İçerik servisi bağımlılığı</param>
+        private const string SUBCATEGORIES_CACHE_PREFIX = "Subcategories_";
+        
         public ContentManager(
             IContentService contentService,
             ICacheService cacheService,
@@ -36,22 +33,19 @@ namespace TestKB.Services
             _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
+        
         /// <summary>
-        /// Tüm içerik öğelerini asenkron olarak getirir.
+        /// İçerik listesi görünüm modelini oluşturur
         /// </summary>
-        public async Task<List<ContentItem>> GetAllContentItemsAsync() =>
-            await _contentService.GetContentItemsAsync();
-
-        /// <summary>
-        /// Verilen kategoriye göre içerik listesini ve kategorileri hazırlayan view modeli oluşturur.
-        /// </summary>
-        /// <param name="category">Filtrelenecek kategori</param>
         public async Task<ContentListViewModel> BuildContentListViewModelAsync(string category)
         {
-            // Normal view için önbellek kullanabiliriz
-            var items = await GetAllContentItemsAsync();
-            var categories = GetDistinctOrderedCategories(items);
+            // Get all content items
+            var items = await _contentService.GetAllAsync();
+            
+            // Get categories (can be cached)
+            var categories = await GetAllCategoriesAsync();
+            
+            // Filter items by category if needed
             var filteredItems = FilterItemsByCategory(items, category);
             
             return new ContentListViewModel
@@ -61,68 +55,53 @@ namespace TestKB.Services
                 SelectedCategory = category
             };
         }
-
+        
         /// <summary>
-        /// Düzenleme ekranı için view modeli oluşturur.
+        /// Düzenleme sayfası görünüm modelini oluşturur
         /// </summary>
-        /// <param name="newContent">Yeni içerik view modeli</param>
-        /// <param name="extendContent">Genişletilmiş içerik view modeli</param>
-        public async Task<EditContentViewModel> BuildEditContentViewModelAsync(NewContentViewModel newContent, ExtendContentViewModel extendContent)
+        public async Task<EditContentViewModel> BuildEditContentViewModelAsync(
+            NewContentViewModel newContent, ExtendContentViewModel extendContent)
         {
-            // Düzenleme sayfaları için her zaman taze veri kullanılır
-            var items = await _contentService.GetContentItemsAsync(true);
+            // Always get fresh data for edit operations
+            var items = await _contentService.GetAllAsync(true);
             
+            // Get categories and subcategories
             var categories = GetDistinctOrderedCategories(items);
+            var subCategories = BuildSubcategoryDictionary(items);
             
-            // Alt kategorileri hesapla
-            var subCategories = items.GroupBy(x => x.Category)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(x => x.SubCategory)
-                          .Distinct(StringComparer.OrdinalIgnoreCase)
-                          .OrderBy(s => s)
-                          .ToList()
-                );
-
             return new EditContentViewModel
             {
                 ExistingCategories = categories,
                 ExistingSubCategories = subCategories,
-                NewContent = newContent,
-                ExtendContent = extendContent,
-                ContentItems = items // Tüm içerik öğelerini view model'e ekle
+                NewContent = newContent ?? new NewContentViewModel(),
+                ExtendContent = extendContent ?? new ExtendContentViewModel(),
+                ContentItems = items 
             };
         }
-
+        
         /// <summary>
-        /// Seçilen kategori ve alt kategoriye göre genişletilmiş içerik view modelini oluşturur.
+        /// Var olan içeriği düzenlemek için görünüm modeli oluşturur
         /// </summary>
-        /// <param name="selectedCategory">Seçilen kategori</param>
-        /// <param name="selectedSubCategory">Seçilen alt kategori</param>
-        public async Task<ExtendContentViewModel> CreateExtendContentViewModelAsync(string selectedCategory, string selectedSubCategory)
+        public async Task<ExtendContentViewModel> CreateExtendContentViewModelAsync(
+            string selectedCategory, string selectedSubCategory)
         {
             _logger.LogInformation("ExtendContentViewModel oluşturuluyor. Category: {Category}, SubCategory: {SubCategory}", 
                 selectedCategory, selectedSubCategory);
                 
-            // Düzenleme sayfaları için her zaman taze veri kullanılır
-            var items = await _contentService.GetContentItemsAsync(true);
-            
             var model = new ExtendContentViewModel
             {
                 SelectedCategory = selectedCategory,
                 SelectedSubCategory = selectedSubCategory
             };
-
+            
             if (!string.IsNullOrWhiteSpace(selectedCategory) && !string.IsNullOrWhiteSpace(selectedSubCategory))
             {
-                var entry = items.FirstOrDefault(x =>
-                    x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase) &&
-                    x.SubCategory.Equals(selectedSubCategory, StringComparison.OrdinalIgnoreCase));
-
-                if (entry != null)
+                var item = await _contentService.GetByCategoryAndSubcategoryAsync(selectedCategory, selectedSubCategory);
+                
+                if (item != null)
                 {
-                    _logger.LogInformation("İçerik bulundu: {Content}", entry.Content);
-                    model.Content = entry.Content;
+                    _logger.LogInformation("İçerik bulundu: {Content}", item.Content);
+                    model.Content = item.Content;
                 }
                 else
                 {
@@ -130,281 +109,322 @@ namespace TestKB.Services
                         selectedCategory, selectedSubCategory);
                 }
             }
+            
             return model;
         }
-
+        
         /// <summary>
-        /// Yeni içerik ekler. Eğer kategori veya alt kategori varsa hata fırlatır.
+        /// Yeni içerik ekler
         /// </summary>
-        /// <param name="model">Yeni içerik view modeli</param>
         public async Task AddNewContentAsync(NewContentViewModel model)
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
 
-            var items = await _contentService.GetContentItemsAsync(true);
-            if (CategoryExists(items, model.Category?.Trim()))
+            // Create the content item
+            var newItem = new ContentItem
             {
-                throw new InvalidOperationException("This category already exists.");
-            }
-            if (!string.IsNullOrWhiteSpace(model.SubCategory) &&
-                SubcategoryExists(items, model.Category?.Trim(), model.SubCategory?.Trim()))
-            {
-                throw new InvalidOperationException("This subcategory already exists.");
-            }
-            await _contentService.AddNewContentAsync(model.Category.Trim(), model.SubCategory?.Trim(), model.Content.Trim());
+                Category = model.Category.Trim(),
+                SubCategory = model.SubCategory?.Trim(),
+                Content = model.Content.Trim()
+            };
             
-            // Tüm önbellekleri temizle
-            ClearAllCaches();
+            await _contentService.CreateAsync(newItem);
             
-            _logger.LogInformation("Yeni içerik eklendi, önbellekler temizlendi");
+            // Invalidate category-related caches
+            InvalidateCategoryCaches();
+            
+            _logger.LogInformation("Yeni içerik eklendi: {Category}/{SubCategory}", model.Category, model.SubCategory);
         }
-
+        
         /// <summary>
-        /// Varolan içeriği günceller veya ekler.
+        /// Var olan içeriği günceller
         /// </summary>
-        /// <param name="model">Genişletilmiş içerik view modeli</param>
         public async Task UpdateContentAsync(ExtendContentViewModel model)
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
-
-            // Always get fresh data from repository
-            var items = await _contentService.GetContentItemsAsync(true);
             
             var chosenCategory = model.SelectedCategory?.Trim();
             var chosenSubCategory = model.SelectedSubCategory?.Trim();
             var newSubCategory = model.NewSubCategory?.Trim();
-
-            // Alt kategori seçimini normalize eder.
-            var actualSubCategory = NormalizeSubcategorySelection(ref chosenSubCategory, newSubCategory, chosenCategory, items);
-
-            if (string.IsNullOrWhiteSpace(chosenSubCategory) && string.IsNullOrWhiteSpace(newSubCategory))
-            {
-                actualSubCategory = TryFindDefaultSubcategory(items, chosenCategory, out chosenSubCategory);
-                if (string.IsNullOrWhiteSpace(chosenSubCategory))
-                {
-                    throw new InvalidOperationException("Please select an existing subcategory or enter a new one.");
-                }
-            }
-
-            // Kategori yeniden adlandırılması gerekiyorsa günceller.
-            if (!string.IsNullOrWhiteSpace(model.EditedCategory) && model.EditedCategory.Trim() != chosenCategory)
-            {
-                chosenCategory = RenameCategoryInAllItems(items, chosenCategory, model.EditedCategory.Trim());
-            }
-
-            // Alt kategori yeniden adlandırılması gerekiyorsa günceller.
-            if (!string.IsNullOrWhiteSpace(model.EditedSubCategory) && model.EditedSubCategory.Trim() != chosenSubCategory)
-            {
-                actualSubCategory = RenameSubcategoryInItems(items, chosenCategory, chosenSubCategory, model.EditedSubCategory.Trim());
-                chosenSubCategory = actualSubCategory;
-            }
-
-            UpdateOrCreateContentItem(items, chosenCategory, actualSubCategory, model.Content?.Trim());
             
-            // Log the exact content being saved
-            _logger.LogInformation("Updating content for {Category}/{SubCategory} with value: {Content}",
-                chosenCategory, actualSubCategory, model.Content?.Trim());
-                
-            await _contentService.UpdateContentItemsAsync(items);
+            // Get all items to work with
+            var items = await _contentService.GetAllAsync(true);
             
-            // Tüm önbellekleri temizle
-            ClearAllCaches();
+            // Determine which subcategory to use
+            string actualSubCategory = DetermineActualSubcategory(
+                chosenCategory, chosenSubCategory, newSubCategory, items);
             
-            _logger.LogInformation("İçerik güncellendi, önbellekler temizlendi");
+            // Handle category renaming if needed
+            if (!string.IsNullOrWhiteSpace(model.EditedCategory) && 
+                model.EditedCategory.Trim() != chosenCategory)
+            {
+                await UpdateCategoryNameInItems(items, chosenCategory, model.EditedCategory.Trim());
+                chosenCategory = model.EditedCategory.Trim();
+            }
+            
+            // Handle subcategory renaming if needed
+            if (!string.IsNullOrWhiteSpace(model.EditedSubCategory) && 
+                model.EditedSubCategory.Trim() != chosenSubCategory)
+            {
+                UpdateSubcategoryNameInItems(items, chosenCategory, chosenSubCategory, model.EditedSubCategory.Trim());
+                actualSubCategory = model.EditedSubCategory.Trim();
+            }
+            
+            // Create or update the content item
+            await UpdateOrCreateContentItem(chosenCategory, actualSubCategory, model.Content?.Trim());
+            
+            // Invalidate category-related caches
+            InvalidateCategoryCaches();
+            
+            _logger.LogInformation("İçerik güncellendi: {Category}/{SubCategory}", chosenCategory, actualSubCategory);
         }
-
+        
         /// <summary>
-        /// Belirtilen kategoriyi günceller.
+        /// Kategori adını günceller
         /// </summary>
-        /// <param name="oldCategory">Eski kategori adı</param>
-        /// <param name="newCategory">Yeni kategori adı</param>
         public async Task UpdateCategoryAsync(string oldCategory, string newCategory)
         {
-            var items = await _contentService.GetContentItemsAsync(true);
-            oldCategory = oldCategory.Trim();
-            newCategory = newCategory.Trim();
-            if (items.Any(x => x.Category.Equals(newCategory, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException("This category already exists.");
-            }
-            foreach (var item in items.Where(x => x.Category.Equals(oldCategory, StringComparison.OrdinalIgnoreCase)))
-            {
-                item.Category = newCategory;
-            }
-            await _contentService.UpdateContentItemsAsync(items);
+            if (string.IsNullOrWhiteSpace(oldCategory))
+                throw new ArgumentException("Eski kategori adı boş olamaz", nameof(oldCategory));
+                
+            if (string.IsNullOrWhiteSpace(newCategory))
+                throw new ArgumentException("Yeni kategori adı boş olamaz", nameof(newCategory));
+                
+            var items = await _contentService.GetAllAsync(true);
+            await UpdateCategoryNameInItems(items, oldCategory, newCategory);
             
-            // Tüm önbellekleri temizle
-            ClearAllCaches();
-            
-            _logger.LogInformation("Kategori güncellendi, önbellekler temizlendi");
+            _logger.LogInformation("Kategori güncellendi: {OldCategory} -> {NewCategory}", oldCategory, newCategory);
         }
-
+        
         /// <summary>
-        /// Belirtilen alt kategoriyi günceller.
+        /// Alt kategori adını günceller
         /// </summary>
-        /// <param name="category">Kategori adı</param>
-        /// <param name="oldSubCategory">Eski alt kategori adı</param>
-        /// <param name="newSubCategory">Yeni alt kategori adı</param>
         public async Task UpdateSubCategoryAsync(string category, string oldSubCategory, string newSubCategory)
         {
-            var items = await _contentService.GetContentItemsAsync(true);
-            category = category.Trim();
-            oldSubCategory = oldSubCategory.Trim();
-            newSubCategory = newSubCategory.Trim();
-            if (items.Any(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
-                                x.SubCategory.Equals(newSubCategory, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException("This subcategory already exists.");
-            }
-            foreach (var item in items.Where(x =>
+            if (string.IsNullOrWhiteSpace(category))
+                throw new ArgumentException("Kategori adı boş olamaz", nameof(category));
+                
+            if (string.IsNullOrWhiteSpace(oldSubCategory))
+                throw new ArgumentException("Eski alt kategori adı boş olamaz", nameof(oldSubCategory));
+                
+            if (string.IsNullOrWhiteSpace(newSubCategory))
+                throw new ArgumentException("Yeni alt kategori adı boş olamaz", nameof(newSubCategory));
+                
+            var items = await _contentService.GetAllAsync(true);
+            
+            // First check if the new subcategory already exists
+            if (items.Any(x => 
                 x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
-                x.SubCategory.Equals(oldSubCategory, StringComparison.OrdinalIgnoreCase)))
+                x.SubCategory?.Equals(newSubCategory, StringComparison.OrdinalIgnoreCase) == true))
             {
-                item.SubCategory = newSubCategory;
+                throw new InvalidOperationException($"Bu alt kategori zaten mevcut: {category}/{newSubCategory}");
             }
-            await _contentService.UpdateContentItemsAsync(items);
             
-            // Tüm önbellekleri temizle
-            ClearAllCaches();
+            // Rename all matching subcategories
+            UpdateSubcategoryNameInItems(items, category, oldSubCategory, newSubCategory);
             
-            _logger.LogInformation("Alt kategori güncellendi, önbellekler temizlendi");
+            // Save all changes
+            await _contentService.UpdateManyAsync(items);
+            
+            // Invalidate category-related caches
+            InvalidateCategoryCaches();
+            _cacheService.Remove($"{SUBCATEGORIES_CACHE_PREFIX}{category}");
+            
+            _logger.LogInformation("Alt kategori güncellendi: {Category}/{OldSubCategory} -> {Category}/{NewSubCategory}", 
+                category, oldSubCategory, newSubCategory);
         }
-
+        
         /// <summary>
-        /// Yeni alt kategori ekler.
+        /// Yeni alt kategori ekler
         /// </summary>
-        /// <param name="category">Kategori adı</param>
-        /// <param name="newSubCategory">Yeni alt kategori adı</param>
         public async Task AddSubCategoryAsync(string category, string newSubCategory)
         {
-            var items = await _contentService.GetContentItemsAsync(true);
-            category = category.Trim();
-            newSubCategory = newSubCategory.Trim();
-            if (SubcategoryExists(items, category, newSubCategory))
-            {
-                throw new InvalidOperationException("This subcategory already exists.");
-            }
-            items.Add(new ContentItem
+            if (string.IsNullOrWhiteSpace(category))
+                throw new ArgumentException("Kategori adı boş olamaz", nameof(category));
+                
+            if (string.IsNullOrWhiteSpace(newSubCategory))
+                throw new ArgumentException("Yeni alt kategori adı boş olamaz", nameof(newSubCategory));
+                
+            // Create empty content for the new subcategory
+            var newItem = new ContentItem
             {
                 Category = category,
                 SubCategory = newSubCategory,
                 Content = string.Empty
-            });
-            await _contentService.UpdateContentItemsAsync(items);
+            };
             
-            // Tüm önbellekleri temizle
-            ClearAllCaches();
+            await _contentService.CreateAsync(newItem);
             
-            _logger.LogInformation("Alt kategori eklendi, önbellekler temizlendi");
+            // Invalidate category-related caches
+            _cacheService.Remove($"{SUBCATEGORIES_CACHE_PREFIX}{category}");
+            
+            _logger.LogInformation("Yeni alt kategori eklendi: {Category}/{SubCategory}", category, newSubCategory);
         }
-
+        
         /// <summary>
-        /// Belirtilen kategoriye ait tüm içerik öğelerini siler.
+        /// Kategoriyi ve ilgili tüm içerikleri siler
         /// </summary>
-        /// <param name="category">Silinecek kategori adı</param>
-        /// <returns>Silinen öğe sayısı</returns>
         public async Task<int> DeleteCategoryAsync(string category)
         {
-            var items = await _contentService.GetContentItemsAsync(true);
-            category = category.Trim();
-            int removedCount = items.RemoveAll(x =>
-                x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
-            await _contentService.UpdateContentItemsAsync(items);
+            if (string.IsNullOrWhiteSpace(category))
+                throw new ArgumentException("Kategori adı boş olamaz", nameof(category));
+                
+            int removedCount = await _contentService.DeleteByCategoryAsync(category);
             
-            // Tüm önbellekleri temizle
-            ClearAllCaches();
+            // Invalidate category-related caches
+            InvalidateCategoryCaches();
+            _cacheService.Remove($"{SUBCATEGORIES_CACHE_PREFIX}{category}");
             
-            _logger.LogInformation("Kategori silindi, önbellekler temizlendi");
+            _logger.LogInformation("Kategori silindi: {Category}, {Count} öğe etkilendi", category, removedCount);
             
             return removedCount;
         }
         
         /// <summary>
-        /// Tüm önbellekleri temizler.
+        /// Tüm kategori isimlerini getirir
         /// </summary>
-        private void ClearAllCaches()
+        public async Task<List<string>> GetAllCategoriesAsync()
         {
-            _cacheService.RemoveByPrefix(CONTENT_LIST_CACHE_PREFIX);
-            _cacheService.RemoveByPrefix(EDIT_CONTENT_CACHE_PREFIX);
-            _cacheService.Remove(CATEGORIES_CACHE_KEY);
-            _cacheService.RemoveByPrefix("Content");
-            _logger.LogInformation("ContentManager: Tüm önbellekler temizlendi");
-        }
-
-        #region Yardımcı Metotlar
-
-        /// <summary>
-        /// İçerik öğeleri arasından benzersiz ve sıralı kategorileri döndürür.
-        /// </summary>
-        private List<string> GetDistinctOrderedCategories(List<ContentItem> items) =>
-            items.Select(item => item.Category)
-                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                 .OrderBy(c => c)
-                 .ToList();
-
-        /// <summary>
-        /// Verilen kategoriye göre içerik öğelerini filtreler.
-        /// </summary>
-        private List<ContentItem> FilterItemsByCategory(List<ContentItem> items, string category) =>
-            string.IsNullOrWhiteSpace(category)
-                ? items
-                : items.Where(item => item.Category.Equals(category, StringComparison.OrdinalIgnoreCase)).ToList();
-
-        /// <summary>
-        /// Belirtilen kategorinin var olup olmadığını kontrol eder.
-        /// </summary>
-        private bool CategoryExists(List<ContentItem> items, string category) =>
-            !string.IsNullOrWhiteSpace(category) && items.Any(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
-
-        /// <summary>
-        /// Belirtilen alt kategorinin var olup olmadığını kontrol eder.
-        /// </summary>
-        private bool SubcategoryExists(List<ContentItem> items, string category, string subcategory) =>
-            !string.IsNullOrWhiteSpace(category) &&
-            !string.IsNullOrWhiteSpace(subcategory) &&
-            items.Any(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
-                           x.SubCategory.Equals(subcategory, StringComparison.OrdinalIgnoreCase));
-
-        /// <summary>
-        /// Alt kategori seçimini normalize eder.
-        /// </summary>
-        private string NormalizeSubcategorySelection(ref string chosenSubCategory, string newSubCat, string chosenCategory, List<ContentItem> items)
-        {
-            if (!string.IsNullOrWhiteSpace(newSubCat) &&
-                !string.IsNullOrWhiteSpace(chosenSubCategory) &&
-                newSubCat.Equals(chosenSubCategory, StringComparison.OrdinalIgnoreCase))
+            return await _cacheService.GetOrSetAsync(CATEGORIES_CACHE_KEY, async () => 
             {
-                return chosenSubCategory;
-            }
-            return !string.IsNullOrWhiteSpace(newSubCat) ? newSubCat : chosenSubCategory;
+                var items = await _contentService.GetAllAsync();
+                return GetDistinctOrderedCategories(items);
+            }, TimeSpan.FromMinutes(30));
         }
-
+        
         /// <summary>
-        /// Varsayılan alt kategoriyi bulmaya çalışır.
+        /// Belirli bir kategoriye ait alt kategorileri getirir
         /// </summary>
-        private string TryFindDefaultSubcategory(List<ContentItem> items, string category, out string chosenSubCategory)
+        public async Task<List<string>> GetSubcategoriesAsync(string category)
         {
-            var defaultSub = items.FirstOrDefault(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase))?.SubCategory;
-            chosenSubCategory = defaultSub;
+            if (string.IsNullOrWhiteSpace(category))
+                return new List<string>();
+                
+            return await _cacheService.GetOrSetAsync($"{SUBCATEGORIES_CACHE_PREFIX}{category}", async () => 
+            {
+                var items = await _contentService.GetAllAsync();
+                return items
+                    .Where(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
+                    .Select(x => x.SubCategory)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList();
+            }, TimeSpan.FromMinutes(30));
+        }
+        
+        #region Helper Methods
+        
+        /// <summary>
+        /// Kategori önbelleklerini geçersiz kılar
+        /// </summary>
+        private void InvalidateCategoryCaches()
+        {
+            _cacheService.Remove(CATEGORIES_CACHE_KEY);
+            _logger.LogDebug("Kategori önbellekleri temizlendi");
+        }
+        
+        /// <summary>
+        /// İçerik öğeleri içinden benzersiz ve sıralı kategorileri alır
+        /// </summary>
+        private List<string> GetDistinctOrderedCategories(List<ContentItem> items)
+        {
+            return items
+                .Select(i => i.Category)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(c => c)
+                .ToList();
+        }
+        
+        /// <summary>
+        /// Kategori-alt kategori sözlüğü oluşturur
+        /// </summary>
+        private Dictionary<string, List<string>> BuildSubcategoryDictionary(List<ContentItem> items)
+        {
+            return items
+                .GroupBy(x => x.Category)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(i => i.SubCategory)
+                          .Distinct(StringComparer.OrdinalIgnoreCase)
+                          .OrderBy(s => s)
+                          .ToList(),
+                    StringComparer.OrdinalIgnoreCase
+                );
+        }
+        
+        /// <summary>
+        /// Kategoriye göre içerik öğelerini filtreler
+        /// </summary>
+        private List<ContentItem> FilterItemsByCategory(List<ContentItem> items, string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                return items;
+                
+            return items
+                .Where(i => i.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        
+        /// <summary>
+        /// Kullanılacak asıl alt kategoriyi belirler
+        /// </summary>
+        private string DetermineActualSubcategory(
+            string chosenCategory, 
+            string chosenSubCategory, 
+            string newSubCategory,
+            List<ContentItem> items)
+        {
+            // If new subcategory is provided, use that
+            if (!string.IsNullOrWhiteSpace(newSubCategory))
+                return newSubCategory;
+                
+            // If chosen subcategory is provided, use that
+            if (!string.IsNullOrWhiteSpace(chosenSubCategory))
+                return chosenSubCategory;
+                
+            // Try to find a default subcategory
+            var defaultSub = items
+                .FirstOrDefault(x => x.Category.Equals(chosenCategory, StringComparison.OrdinalIgnoreCase))
+                ?.SubCategory;
+                
+            if (string.IsNullOrWhiteSpace(defaultSub))
+                throw new InvalidOperationException(
+                    "Lütfen mevcut bir alt kategori seçin veya yeni bir alt kategori ekleyin");
+                    
             return defaultSub;
         }
-
+        
         /// <summary>
-        /// Tüm içerik öğeleri içinde kategori yeniden adlandırmasını yapar.
+        /// Tüm içerik öğeleri içinde kategori adını günceller
         /// </summary>
-        private string RenameCategoryInAllItems(List<ContentItem> items, string oldCategory, string newCategory)
+        private async Task UpdateCategoryNameInItems(List<ContentItem> items, string oldCategory, string newCategory)
         {
+            // Check if the new category already exists
+            if (items.Any(x => x.Category.Equals(newCategory, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException($"Bu kategori zaten mevcut: {newCategory}");
+                
+            // Update all items with the matching category
             foreach (var item in items.Where(x => x.Category.Equals(oldCategory, StringComparison.OrdinalIgnoreCase)))
             {
                 item.Category = newCategory;
             }
-            return newCategory;
+            
+            // Save all changes
+            await _contentService.UpdateManyAsync(items);
+            
+            // Invalidate category-related caches
+            InvalidateCategoryCaches();
         }
-
+        
         /// <summary>
-        /// Tüm içerik öğeleri içinde alt kategori yeniden adlandırmasını yapar.
+        /// İçerik öğeleri içinde alt kategori adını günceller
         /// </summary>
-        private string RenameSubcategoryInItems(List<ContentItem> items, string category, string oldSubCategory, string newSubCategory)
+        private void UpdateSubcategoryNameInItems(
+            List<ContentItem> items, 
+            string category, 
+            string oldSubCategory, 
+            string newSubCategory)
         {
             foreach (var item in items.Where(x =>
                 x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
@@ -412,37 +432,36 @@ namespace TestKB.Services
             {
                 item.SubCategory = newSubCategory;
             }
-            return newSubCategory;
         }
-
+        
         /// <summary>
-        /// Mevcut içerik öğesini günceller ya da yoksa yeni öğe ekler.
+        /// İçerik öğesini günceller veya yeni oluşturur
         /// </summary>
-        private void UpdateOrCreateContentItem(List<ContentItem> items, string category, string subcategory, string content)
+        private async Task UpdateOrCreateContentItem(string category, string subcategory, string content)
         {
-            var existingEntries = items
-                .Where(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
-                            x.SubCategory.Equals(subcategory, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (existingEntries.Any())
+            // Try to get existing item
+            var item = await _contentService.GetByCategoryAndSubcategoryAsync(category, subcategory);
+            
+            if (item != null)
             {
-                existingEntries[0].Content = content;
-                foreach (var duplicate in existingEntries.Skip(1).ToList())
-                {
-                    items.Remove(duplicate);
-                }
+                // Update existing item
+                item.Content = content ?? string.Empty;
+                await _contentService.UpdateAsync(item);
             }
             else
             {
-                items.Add(new ContentItem
+                // Create new item
+                var newItem = new ContentItem
                 {
                     Category = category,
                     SubCategory = subcategory,
                     Content = content ?? string.Empty
-                });
+                };
+                
+                await _contentService.CreateAsync(newItem);
             }
         }
+        
         #endregion
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace TestKB.ViewModels
+﻿namespace TestKB.Models.ViewModels
 {
     public class AddSubCategoryViewModel
     {

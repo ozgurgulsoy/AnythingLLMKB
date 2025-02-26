@@ -1,14 +1,14 @@
 ﻿// Controllers/ContentController.cs
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using TestKB.Models;
+using TestKB.Models.ViewModels;
 using TestKB.Services;
-using TestKB.ViewModels;
+using TestKB.Services.Interfaces;
 
 namespace TestKB.Controllers
 {
@@ -57,7 +57,6 @@ namespace TestKB.Controllers
         /// <summary>
         /// Ana sayfa içeriğini, isteğe bağlı kategori filtresiyle görüntüler.
         /// </summary>
-        /// <param name="category">Filtre için kategori</param>
         public async Task<IActionResult> Index(string category, Department? dept)
         {
             try
@@ -91,35 +90,15 @@ namespace TestKB.Controllers
                 _logger.LogInformation("Edit sayfası başlatılıyor. Category: {Category}, SubCategory: {SubCategory}", 
                     selectedCategory, selectedSubCategory);
                 
-                // Force direct repository access
-                var freshItems = await _contentService.GetContentItemsAsync(true);
+                // Get fresh data
+                var freshItems = await _contentService.GetAllAsync(true);
                 
-                // Create a model directly from the repository data
-                var extendModel = new ExtendContentViewModel { 
-                    SelectedCategory = selectedCategory,
-                    SelectedSubCategory = selectedSubCategory
-                };
+                // Create the view model
+                var extendModel = await _contentManager.CreateExtendContentViewModelAsync(
+                    selectedCategory, selectedSubCategory);
                 
-                // Manually find the content for this category/subcategory
-                if (!string.IsNullOrWhiteSpace(selectedCategory) && !string.IsNullOrWhiteSpace(selectedSubCategory))
-                {
-                    var entry = freshItems.FirstOrDefault(x =>
-                        x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase) &&
-                        x.SubCategory.Equals(selectedSubCategory, StringComparison.OrdinalIgnoreCase));
-                        
-                    if (entry != null)
-                    {
-                        _logger.LogInformation("Bulunan içerik: {Content}", entry.Content);
-                        extendModel.Content = entry.Content;
-                    }
-                    else
-                    {
-                        _logger.LogWarning("İçerik bulunamadı: {Category}/{SubCategory}", selectedCategory, selectedSubCategory);
-                    }
-                }
-                
-                // Build view model with both manual model and empty NewContentViewModel
-                var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), extendModel);
+                var viewModel = await _contentManager.BuildEditContentViewModelAsync(
+                    new NewContentViewModel(), extendModel);
                 
                 // Add timestamp to see the exact time this was generated
                 ViewBag.LastRefreshedTime = DateTime.Now.ToString("HH:mm:ss.fff");
@@ -144,7 +123,6 @@ namespace TestKB.Controllers
         /// <summary>
         /// Yeni içerik ekleme işlemini gerçekleştirir.
         /// </summary>
-        /// <param name="model">Yeni içerik view modeli</param>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditNewContent([Bind(Prefix = "NewContent")] NewContentViewModel model)
@@ -159,7 +137,7 @@ namespace TestKB.Controllers
 
                     var error = _errorHandlingService.HandleValidationErrors(validationErrors);
 
-                    var allItems = await _contentService.GetContentItemsAsync(true);
+                    var allItems = await _contentService.GetAllAsync(true);
                     var viewModel = await _contentManager.BuildEditContentViewModelAsync(model, new ExtendContentViewModel());
                     ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
                     TempData["ErrorMessage"] = error.Message;
@@ -176,7 +154,7 @@ namespace TestKB.Controllers
             {
                 var error = _errorHandlingService.HandleException(ex, "Yeni içerik ekleme");
 
-                var allItems = await _contentService.GetContentItemsAsync(true);
+                var allItems = await _contentService.GetAllAsync(true);
                 var viewModel = await _contentManager.BuildEditContentViewModelAsync(model, new ExtendContentViewModel());
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(allItems);
                 TempData["ErrorMessage"] = error.Message;
@@ -188,7 +166,6 @@ namespace TestKB.Controllers
         /// <summary>
         /// Mevcut içeriği günceller.
         /// </summary>
-        /// <param name="model">Genişletilmiş içerik view modeli</param>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ExtendContent([Bind(Prefix = "ExtendContent")] ExtendContentViewModel model)
@@ -211,7 +188,7 @@ namespace TestKB.Controllers
                     _logger.LogWarning("ModelState hataları: {Errors}", string.Join("; ", validationErrors));
                     
                     // Get fresh data for the view
-                    var freshItems = await _contentService.GetContentItemsAsync(true);
+                    var freshItems = await _contentService.GetAllAsync(true);
                     var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), model);
                     ViewBag.AllItemsJson = JsonSerializer.Serialize(freshItems);
                     TempData["ErrorMessage"] = error.Message;
@@ -220,9 +197,6 @@ namespace TestKB.Controllers
                 }
 
                 await _contentManager.UpdateContentAsync(model);
-                
-                // Force reload all content
-                await _contentService.GetContentItemsAsync(true);
 
                 TempData["SuccessMessage"] = _errorHandlingService.CreateSuccessResponse("İçerik başarıyla güncellendi.").Message;
                 TempData["ActiveTab"] = "extendContent";
@@ -240,7 +214,7 @@ namespace TestKB.Controllers
                 TempData["ErrorMessage"] = error.Message;
                 
                 // Get fresh data for the view
-                var freshItems = await _contentService.GetContentItemsAsync(true);
+                var freshItems = await _contentService.GetAllAsync(true);
                 var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), model);
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(freshItems);
                 TempData["ActiveTab"] = "extendContent";
@@ -251,7 +225,6 @@ namespace TestKB.Controllers
         /// <summary>
         /// Kategori güncelleme işlemini gerçekleştirir.
         /// </summary>
-        /// <param name="model">Kategori güncelleme view modeli</param>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateCategory([FromBody] UpdateCategoryViewModel model)
@@ -265,9 +238,6 @@ namespace TestKB.Controllers
                 }
 
                 await _contentManager.UpdateCategoryAsync(model.OldCategory, model.NewCategory);
-                
-                // Force reload all content
-                await _contentService.GetContentItemsAsync(true);
 
                 return Json(_errorHandlingService.CreateSuccessResponse("Kategori başarıyla güncellendi."));
             }
@@ -281,7 +251,6 @@ namespace TestKB.Controllers
         /// <summary>
         /// Alt kategori güncelleme işlemini gerçekleştirir.
         /// </summary>
-        /// <param name="model">Alt kategori güncelleme view modeli</param>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateSubCategory([FromBody] UpdateSubCategoryViewModel model)
@@ -297,9 +266,6 @@ namespace TestKB.Controllers
                 }
 
                 await _contentManager.UpdateSubCategoryAsync(model.Category, model.OldSubCategory, model.NewSubCategory);
-                
-                // Force reload all content
-                await _contentService.GetContentItemsAsync(true);
 
                 return Json(_errorHandlingService.CreateSuccessResponse("Alt kategori başarıyla güncellendi."));
             }
@@ -313,7 +279,6 @@ namespace TestKB.Controllers
         /// <summary>
         /// Yeni alt kategori ekleme işlemini gerçekleştirir.
         /// </summary>
-        /// <param name="model">Yeni alt kategori view modeli</param>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddSubCategory([FromBody] AddSubCategoryViewModel model)
@@ -327,9 +292,6 @@ namespace TestKB.Controllers
                 }
 
                 await _contentManager.AddSubCategoryAsync(model.Category, model.NewSubCategory);
-                
-                // Force reload all content
-                await _contentService.GetContentItemsAsync(true);
 
                 return Json(_errorHandlingService.CreateSuccessResponse("Alt kategori başarıyla eklendi."));
             }
@@ -349,7 +311,7 @@ namespace TestKB.Controllers
         {
             try
             {
-                var items = await _contentService.GetContentItemsAsync(true);
+                var items = await _contentService.GetAllAsync(true);
                 return Json(new { success = true, data = items });
             }
             catch (Exception ex)
@@ -390,7 +352,6 @@ namespace TestKB.Controllers
         /// <summary>
         /// Belirtilen kategoriye ait içerik öğelerini siler.
         /// </summary>
-        /// <param name="model">Kategori silme view modeli</param>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCategory([FromBody] DeleteCategoryViewModel model)
@@ -404,9 +365,6 @@ namespace TestKB.Controllers
                 }
 
                 int removedCount = await _contentManager.DeleteCategoryAsync(model.Category);
-                
-                // Force reload all content
-                await _contentService.GetContentItemsAsync(true);
 
                 return Json(_errorHandlingService.CreateSuccessResponse($"{removedCount} içerik öğesi silindi."));
             }

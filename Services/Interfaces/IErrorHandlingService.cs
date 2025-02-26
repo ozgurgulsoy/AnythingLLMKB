@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace TestKB.Services
+﻿namespace TestKB.Services.Interfaces
 {
     public interface IErrorHandlingService
     {

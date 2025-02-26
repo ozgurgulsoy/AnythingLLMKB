@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using TestKB.Services.Interfaces;
 
 namespace TestKB.Services
 {

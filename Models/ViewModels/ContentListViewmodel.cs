@@ -1,6 +1,4 @@
-﻿using TestKB.Models;
-
-namespace TestKB.ViewModels
+﻿namespace TestKB.Models.ViewModels
 {
     public class ContentListViewModel
     {
