@@ -1,5 +1,5 @@
 ﻿// wwwroot/js/modules/api.js
-const api = (function() {
+const api = (function () {
     /**
      * API çağrısı yapar ve hata işleme mantığı içerir
      * @param {string} url - API endpoint'i
@@ -10,18 +10,23 @@ const api = (function() {
      */
     async function call(url, options, successCallback, errorContext) {
         try {
-            const response = await fetch(url, options);
+            // Add cache busting parameter to avoid stale data
+            const cacheBuster = `_=${Date.now()}`;
+            const urlWithCache = url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
+
+            const response = await fetch(urlWithCache, options);
 
             // HTTP hata durumları için kontrol
             if (!response.ok) {
                 notifications.show(`${errorContext} sırasında bir hata oluştu: ${response.status} ${response.statusText}`, 'danger');
+                console.error(`Error during ${errorContext}: ${response.status} ${response.statusText}`);
                 return null;
             }
 
             const data = await response.json();
 
             // ErrorResponse formatındaki yanıtlar için kontrol
-            if (data && typeof data === 'object' && data.hasOwnProperty('success')) {
+            if (data && typeof data === 'object' && 'success' in data) {
                 if (!data.success) {
                     // API'dan dönen hata mesajını göster
                     if (data.validationErrors && data.validationErrors.length > 0) {
@@ -48,7 +53,7 @@ const api = (function() {
             }
         } catch (error) {
             console.error(`Error during ${errorContext}:`, error);
-            notifications.show(`${errorContext} sırasında bir hata oluştu.`, 'danger');
+            notifications.show(`${errorContext} sırasında bir hata oluştu: ${error.message}`, 'danger');
             return null;
         }
     }
@@ -56,19 +61,27 @@ const api = (function() {
     /**
      * Sunucudan içerik öğelerini yeniden çeker.
      * @param {Function} [callback] - Veriler yüklendikten sonra çağrılacak fonksiyon
+     * @returns {Promise<Array>} İçerik öğeleri dizisi
      */
     async function getContentItems(callback) {
         const data = await call(
             '/Content/GetContentItems',
-            { method: 'GET' },
+            {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            },
             function (data) {
                 // GetContentItems başarılı yanıtı doğrudan dizi veya success:true ve data:[] formatında olabilir
                 if (Array.isArray(data)) {
-                    allItems = data;
+                    window.allItems = data;
                     if (callback) callback();
                     return data;
                 } else if (data && data.data && Array.isArray(data.data)) {
-                    allItems = data.data;
+                    window.allItems = data.data;
                     if (callback) callback();
                     return data.data;
                 } else {
@@ -79,8 +92,21 @@ const api = (function() {
             },
             'İçerik öğeleri yüklenirken'
         );
-        
-        return data;
+
+        return data || [];
+    }
+
+    /**
+     * CSRF token'ını sayfadan alır
+     * @returns {string} CSRF token değeri
+     */
+    function getAntiForgeryToken() {
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (!tokenInput) {
+            console.error('CSRF token bulunamadı');
+            return '';
+        }
+        return tokenInput.value;
     }
 
     /**
@@ -90,7 +116,12 @@ const api = (function() {
      * @returns {Promise<any>} - API yanıtı
      */
     async function updateCategory(oldCategory, newCategory) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const token = getAntiForgeryToken();
+        if (!token) {
+            notifications.show('Güvenlik token\'ı bulunamadı. Sayfayı yenileyin ve tekrar deneyin.', 'danger');
+            return null;
+        }
+
         return await call(
             '/Content/UpdateCategory',
             {
@@ -117,7 +148,12 @@ const api = (function() {
      * @returns {Promise<any>} - API yanıtı
      */
     async function updateSubCategory(category, oldSubCategory, newSubCategory) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const token = getAntiForgeryToken();
+        if (!token) {
+            notifications.show('Güvenlik token\'ı bulunamadı. Sayfayı yenileyin ve tekrar deneyin.', 'danger');
+            return null;
+        }
+
         return await call(
             '/Content/UpdateSubCategory',
             {
@@ -144,7 +180,12 @@ const api = (function() {
      * @returns {Promise<any>} - API yanıtı
      */
     async function addSubCategory(category, newSubCategory) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const token = getAntiForgeryToken();
+        if (!token) {
+            notifications.show('Güvenlik token\'ı bulunamadı. Sayfayı yenileyin ve tekrar deneyin.', 'danger');
+            return null;
+        }
+
         return await call(
             '/Content/AddSubCategory',
             {
@@ -169,7 +210,12 @@ const api = (function() {
      * @returns {Promise<any>} - API yanıtı
      */
     async function deleteCategory(category) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const token = getAntiForgeryToken();
+        if (!token) {
+            notifications.show('Güvenlik token\'ı bulunamadı. Sayfayı yenileyin ve tekrar deneyin.', 'danger');
+            return null;
+        }
+
         return await call(
             '/Content/DeleteCategory',
             {
