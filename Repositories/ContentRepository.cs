@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using TestKB.Models;
+using TestKB.Services.Interfaces;
 
 namespace TestKB.Repositories
 {
@@ -21,15 +22,18 @@ namespace TestKB.Repositories
         private readonly string _filePath;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly ILogger<ContentRepository> _logger;
+        private readonly INotificationService _notificationService;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
         public ContentRepository(
             IWebHostEnvironment env,
-            ILogger<ContentRepository> logger)
+            ILogger<ContentRepository> logger,
+            INotificationService notificationService)
         {
             if (env == null) throw new ArgumentNullException(nameof(env));
             _filePath = Path.Combine(env.WebRootPath, "data.json");
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
 
             _jsonOptions = new JsonSerializerOptions
             {
@@ -84,6 +88,9 @@ namespace TestKB.Repositories
                 }
 
                 await File.WriteAllTextAsync(_filePath, jsonString, Encoding.UTF8);
+                
+                // İçerik değişikliğini bildir
+                await NotifyContentChanged();
             }
             catch (Exception ex)
             {
@@ -102,6 +109,30 @@ namespace TestKB.Repositories
         public Task<bool> ExistsAsync()
         {
             return Task.FromResult(File.Exists(_filePath));
+        }
+        
+        /// <summary>
+        /// İçerik değişikliğini ilgili servislere bildirir.
+        /// </summary>
+        private async Task NotifyContentChanged()
+        {
+            try
+            {
+                bool success = await _notificationService.NotifyContentChangeAsync();
+                if (success)
+                {
+                    _logger.LogInformation("İçerik değişikliği bildirimi başarıyla gönderildi");
+                }
+                else
+                {
+                    _logger.LogWarning("İçerik değişikliği bildirimi gönderilemedi");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Bildirim gönderirken oluşan hata içerik kaydetme işlemini etkilemeyecek şekilde yutulur
+                _logger.LogError(ex, "İçerik değişikliği bildirilirken bir hata oluştu");
+            }
         }
     }
 }

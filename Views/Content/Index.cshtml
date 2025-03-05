@@ -8,12 +8,12 @@
 
 <!-- Use a fluid container to span full width -->
 <div class="container-fluid mt-4">
-    <!-- Centered Filter Form -->
+    <!-- Centered Category Filter Form -->
     <div class="row justify-content-center">
         <div class="col-md-8">
             <form asp-controller="Content" method="get" asp-action="Index" class="mb-4">
                 <div class="form-row align-items-end">
-                    <div class="col-md-4">
+                    <div class="col-md-12">
                         <label for="categoryFilter">Kategori Seç</label>
                         <select id="categoryFilter" name="category" class="form-control">
                             <option value="">Tüm Kategoriler</option>
@@ -27,18 +27,9 @@
                             }
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label for="departmentFilter">Departman Seç</label>
-                        <select id="departmentFilter" name="dept" class="form-control">
-                            @foreach (var dept in Enum.GetValues(typeof(Department)))
-                            {
-                                var selectedAttr = (Department)dept == selectedDepartment ? "selected" : "";
-                                @Html.Raw($"<option value='{dept}' {selectedAttr}>{dept}</option>")
-                                ;
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-4">
+                </div>
+                <div class="form-row mt-2">
+                    <div class="col-md-12">
                         <button type="submit" class="btn btn-primary btn-block">Filtrele</button>
                     </div>
                 </div>

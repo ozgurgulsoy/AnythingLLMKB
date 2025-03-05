@@ -48,24 +48,6 @@
     "Department": 0
   },
   {
-    "Category": "Ağ Güvenliği",
-    "SubCategory": "Firewall'lar",
-    "Content": "Firewall'lar, ağ trafiğini izleyerek ve kontrol ederek ağ güvenliğini sağlayan cihazlardır. İstenmeyen trafiği engelleyebilir ve ağa yetkisiz erişimi önleyebilirler.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Güvenliği",
-    "SubCategory": "Siber Saldırılar",
-    "Content": "Siber saldırılar, ağlara ve sistemlere zarar vermeyi amaçlayan kötü niyetli eylemlerdir. Kimlik avı, fidye yazılımı ve hizmet reddi saldırıları gibi çeşitli saldırı türleri bulunur.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Güvenliği",
-    "SubCategory": "VPN'ler",
-    "Content": "VPN'ler (Sanal Özel Ağlar), internet üzerinden güvenli ve şifreli bağlantılar oluşturmayı sağlar. Kullanıcıların gizliliğini korur ve sansürü aşmalarına yardımcı olabilir.",
-    "Department": 0
-  },
-  {
     "Category": "Ağ Yönetimi",
     "SubCategory": "Ağ İzleme",
     "Content": "Ağ izleme, ağ performansını ve sorunları tespit etmek için kullanılan bir süreçtir. Ağ trafiği, cihaz durumu ve bağlantı kalitesi gibi veriler izlenir.",
@@ -156,24 +138,6 @@
     "Department": 0
   },
   {
-    "Category": "Ağ Güvenliği",
-    "SubCategory": "Kimlik Doğrulama",
-    "Content": "Kimlik doğrulama, kullanıcıların veya cihazların kimliğini doğrulamak için kullanılan bir süreçtir. Kullanıcı adı ve parola, biyometrik veriler veya dijital sertifikalar gibi farklı yöntemler kullanılabilir.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Güvenliği",
-    "SubCategory": "Şifreleme",
-    "Content": "Şifreleme, veriyi okunamaz hale getirmek için kullanılan bir yöntemdir. Şifreleme algoritmaları, veriyi yalnızca yetkili kişilerin çözebileceği bir biçime dönüştürür.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Güvenliği",
-    "SubCategory": "Sızma Testi",
-    "Content": "Sızma testi, bir ağın veya sistemin güvenlik açıklarını bulmak için yapılan bir simülasyon saldırısıdır. Etik hacker'lar tarafından gerçekleştirilir ve güvenlik önlemlerinin etkinliğini değerlendirmeye yardımcı olur.",
-    "Department": 0
-  },
-  {
     "Category": "Ağ Performansı",
     "SubCategory": "Gecikme (Latency)",
     "Content": "Gecikme, verinin bir noktadan diğerine ulaşması için geçen süredir. Düşük gecikme, gerçek zamanlı uygulamalar (örneğin video konferans) için önemlidir.",
@@ -208,11 +172,5 @@
     "SubCategory": "Bulut Bilişim Mimarisi",
     "Content": "Bulut bilişim mimarisi, kaynakların (sunucular, depolama, yazılım) internet üzerinden sunulduğu bir yapıdır. Kullanıcılar, bu kaynaklara istedikleri zaman ve yerden erişebilirler.",
     "Department": 0
-  },
-  {
-    "Category": "asd",
-    "SubCategory": "ASD",
-    "Content": "asd",
-    "Department": 3
   }
 ]

@@ -14,6 +14,9 @@ builder.Services.AddResponseCaching();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Add HttpClient services for notification
+builder.Services.AddHttpClient();
+
 // Add session support
 builder.Services.AddSession(options =>
 {
@@ -31,8 +34,23 @@ builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<IContentManager, ContentManager>();
 builder.Services.AddScoped<IContentRepository, ContentRepository>();
 
+// Register notification service
+builder.Services.AddScoped<INotificationService, ContentChangeNotificationService>();
+
 // Register error handling service
 builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
+// Add this after other service registrations in Program.cs
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowPythonScript", policy =>
+    {
+        policy.WithOrigins("http://localhost:5000")
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
+// Add this before app.UseRouting() in the middleware pipeline
 
 // Configure logging - higher detail level for development
 builder.Logging.ClearProviders();
@@ -81,7 +99,7 @@ app.Use(async (context, next) =>
     
     await next();
 });
-
+app.UseCors("AllowPythonScript");
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();

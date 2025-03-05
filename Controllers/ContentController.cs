@@ -54,18 +54,12 @@ namespace TestKB.Controllers
             return (Department)deptValue.Value;
         }
 
-        public async Task<IActionResult> Index(string category, Department? dept = null)
+        public async Task<IActionResult> Index(string category)
         {
             try
             {
-                // Use department from parameter or session
-                Department currentDepartment = dept ?? GetCurrentDepartment();
-                
-                // Update session if department was provided in request
-                if (dept.HasValue)
-                {
-                    MSSession.SetInt32(HttpContext.Session, "SelectedDepartment", (int)dept.Value);
-                }
+                // Get current department from session
+                Department currentDepartment = GetCurrentDepartment();
                 
                 var viewModel = await _contentManager.BuildContentListViewModelAsync(category, currentDepartment);
                 return View(viewModel);
@@ -322,6 +316,9 @@ namespace TestKB.Controllers
             }
         }
 
+        // Modify your ConvertedContent method in ContentController.cs
+        [HttpGet]
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public async Task<IActionResult> ConvertedContent()
         {
             try
@@ -329,21 +326,19 @@ namespace TestKB.Controllers
                 var jsonFilePath = Path.Combine(_env.WebRootPath, "data.json");
                 if (!System.IO.File.Exists(jsonFilePath))
                 {
-                    TempData["ErrorMessage"] = "JSON dosyası bulunamadı.";
-                    return View((object)"");
+                    return Content("JSON dosyası bulunamadı.", "text/plain");
                 }
 
                 var jsonContent = await System.IO.File.ReadAllTextAsync(jsonFilePath);
                 var plainText = Services.JsonToTextConverter.ConvertJsonToText(jsonContent);
 
-                return View((object)plainText);
+                // Return plain text response for easier processing by AnythingLLM
+                return Content(plainText, "text/plain");
             }
             catch (Exception ex)
             {
                 var error = _errorHandlingService.HandleException(ex, "Converting content");
-
-                TempData["ErrorMessage"] = error.Message;
-                return View((object)"İçerik dönüştürülürken bir hata oluştu.");
+                return Content("İçerik dönüştürülürken bir hata oluştu: " + error.Message, "text/plain");
             }
         }
         
