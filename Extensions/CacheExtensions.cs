@@ -15,8 +15,7 @@ public static class CacheExtensions
     /// <returns>Önbellek anahtarı</returns>
     public static string CreateCacheKey(this object instance, string prefix, params string[] propertyNames)
     {
-        if (instance == null)
-            throw new ArgumentNullException(nameof(instance));
+        ArgumentNullException.ThrowIfNull(instance);
 
         var keyBuilder = new StringBuilder(prefix);
         var instanceType = instance.GetType();

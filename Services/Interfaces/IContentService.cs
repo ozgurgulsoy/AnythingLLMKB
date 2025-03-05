@@ -1,6 +1,4 @@
-﻿// Services/IContentService.cs
-
-using TestKB.Models;
+﻿using TestKB.Models;
 
 namespace TestKB.Services.Interfaces
 {
@@ -18,6 +16,11 @@ namespace TestKB.Services.Interfaces
         /// Verilen kategori ve alt kategoriye göre içerik öğesini getirir
         /// </summary>
         Task<ContentItem> GetByCategoryAndSubcategoryAsync(string category, string subcategory);
+        
+        /// <summary>
+        /// Verilen kategori, alt kategori ve departmana göre içerik öğesini getirir
+        /// </summary>
+        Task<ContentItem> GetByCategoryAndSubcategoryAsync(string category, string subcategory, Department department);
         
         /// <summary>
         /// Yeni bir içerik öğesi ekler

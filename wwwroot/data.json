@@ -2,176 +2,217 @@
   {
     "Category": "Bilgisayar Ağları",
     "SubCategory": "Temel Kavramlar",
-    "Content": "Bilgisayar ağları, bilgi ve kaynak paylaşımı için birbirine bağlı bilgisayar sistemlerinden oluşur. Ağlar, veri iletişimi ve cihazlar arası etkileşimi mümkün kılar."
+    "Content": "Bilgisayar ağları, bilgi ve kaynak paylaşımı için birbirine bağlı bilgisayar sistemlerinden oluşur. Ağlar, veri iletişimi ve cihazlar arası etkileşimi mümkün kılar.",
+    "Department": 0
   },
   {
     "Category": "Bilgisayar Ağları",
     "SubCategory": "Ağ Topolojileri",
-    "Content": "Ağ topolojisi, ağdaki cihazların fiziksel veya mantıksal düzenlenmesidir. Yaygın topolojiler arasında yıldız, halka, otobüs ve ağaç topolojileri bulunur."
+    "Content": "Ağ topolojisi, ağdaki cihazların fiziksel veya mantıksal düzenlenmesidir. Yaygın topolojiler arasında yıldız, halka, otobüs ve ağaç topolojileri bulunur. test",
+    "Department": 0
   },
   {
     "Category": "Bilgisayar Ağları",
     "SubCategory": "Ağ Protokolleri",
-    "Content": "Ağ protokolleri, veri iletişimi için kullanılan kurallar ve standartlardır. TCP/IP, UDP, HTTP ve FTP gibi birçok farklı protokol mevcuttur."
+    "Content": "Ağ protokolleri, veri iletişimi için kullanılan kurallar ve standartlardır. TCP/IP, UDP, HTTP ve FTP gibi birçok farklı protokol mevcuttur.",
+    "Department": 0
   },
   {
     "Category": "Bilgisayar Ağları",
     "SubCategory": "Ağ Cihazları",
-    "Content": "Ağ cihazları, ağdaki veri iletimini sağlayan donanımlardır. Yönlendiriciler, anahtarlar, modemler ve ağ arayüz kartları gibi çeşitli cihazlar bulunur."
+    "Content": "Ağ cihazları, ağdaki veri iletimini sağlayan donanımlardır. Yönlendiriciler, anahtarlar, modemler ve ağ arayüz kartları gibi çeşitli cihazlar bulunur.",
+    "Department": 0
   },
   {
     "Category": "Kablosuz Ağlar",
     "SubCategory": "Wi-Fi Teknolojisi",
-    "Content": "Wi-Fi, kablosuz ağlarda kullanılan bir teknolojidir. IEEE 802.11 standartlarına dayanır ve cihazların kablosuz olarak internete veya ağa bağlanmasını sağlar."
+    "Content": "Wi-Fi, kablosuz ağlarda kullanılan bir teknolojidir. IEEE 802.11 standartlarına dayanır ve cihazların kablosuz olarak internete veya ağa bağlanmasını sağlar.",
+    "Department": 0
   },
   {
     "Category": "Kablosuz Ağlar",
     "SubCategory": "Wi-Fi Güvenliği",
-    "Content": "Wi-Fi ağlarının güvenliği önemlidir. WPA2 ve WPA3 gibi şifreleme protokolleri kullanılarak ağın yetkisiz erişime karşı korunması sağlanmalıdır."
+    "Content": "Wi-Fi ağlarının güvenliği önemlidir. WPA2 ve WPA3 gibi şifreleme protokolleri kullanılarak ağın yetkisiz erişime karşı korunması sağlanmalıdır.",
+    "Department": 0
   },
   {
     "Category": "Kablosuz Ağlar",
     "SubCategory": "Bluetooth Teknolojisi",
-    "Content": "Bluetooth, kısa mesafelerde kablosuz iletişim için kullanılan bir teknolojidir. Genellikle kulaklıklar, hoparlörler ve diğer cihazlar arasında bağlantı kurmak için kullanılır."
+    "Content": "Bluetooth, kısa mesafelerde kablosuz iletişim için kullanılan bir teknolojidir. Genellikle kulaklıklar, hoparlörler ve diğer cihazlar arasında bağlantı kurmak için kullanılır.",
+    "Department": 0
   },
   {
     "Category": "Kablosuz Ağlar",
     "SubCategory": "Mobil Ağlar",
-    "Content": "Mobil ağlar, cep telefonları ve diğer mobil cihazların iletişim kurmasını sağlar. 4G ve 5G gibi farklı nesil mobil ağ teknolojileri mevcuttur."
+    "Content": "Mobil ağlar, cep telefonları ve diğer mobil cihazların iletişim kurmasını sağlar. 4G ve 5G gibi farklı nesil mobil ağ teknolojileri mevcuttur.",
+    "Department": 0
   },
   {
     "Category": "Ağ Güvenliği",
     "SubCategory": "Firewall'lar",
-    "Content": "Firewall'lar, ağ trafiğini izleyerek ve kontrol ederek ağ güvenliğini sağlayan cihazlardır. İstenmeyen trafiği engelleyebilir ve ağa yetkisiz erişimi önleyebilirler."
+    "Content": "Firewall'lar, ağ trafiğini izleyerek ve kontrol ederek ağ güvenliğini sağlayan cihazlardır. İstenmeyen trafiği engelleyebilir ve ağa yetkisiz erişimi önleyebilirler.",
+    "Department": 0
   },
   {
     "Category": "Ağ Güvenliği",
     "SubCategory": "Siber Saldırılar",
-    "Content": "Siber saldırılar, ağlara ve sistemlere zarar vermeyi amaçlayan kötü niyetli eylemlerdir. Kimlik avı, fidye yazılımı ve hizmet reddi saldırıları gibi çeşitli saldırı türleri bulunur."
+    "Content": "Siber saldırılar, ağlara ve sistemlere zarar vermeyi amaçlayan kötü niyetli eylemlerdir. Kimlik avı, fidye yazılımı ve hizmet reddi saldırıları gibi çeşitli saldırı türleri bulunur.",
+    "Department": 0
   },
   {
     "Category": "Ağ Güvenliği",
     "SubCategory": "VPN'ler",
-    "Content": "VPN'ler (Sanal Özel Ağlar), internet üzerinden güvenli ve şifreli bağlantılar oluşturmayı sağlar. Kullanıcıların gizliliğini korur ve sansürü aşmalarına yardımcı olabilir."
+    "Content": "VPN'ler (Sanal Özel Ağlar), internet üzerinden güvenli ve şifreli bağlantılar oluşturmayı sağlar. Kullanıcıların gizliliğini korur ve sansürü aşmalarına yardımcı olabilir.",
+    "Department": 0
   },
   {
     "Category": "Ağ Yönetimi",
     "SubCategory": "Ağ İzleme",
-    "Content": "Ağ izleme, ağ performansını ve sorunları tespit etmek için kullanılan bir süreçtir. Ağ trafiği, cihaz durumu ve bağlantı kalitesi gibi veriler izlenir."
+    "Content": "Ağ izleme, ağ performansını ve sorunları tespit etmek için kullanılan bir süreçtir. Ağ trafiği, cihaz durumu ve bağlantı kalitesi gibi veriler izlenir.",
+    "Department": 0
   },
   {
     "Category": "Ağ Yönetimi",
     "SubCategory": "Ağ Optimizasyonu",
-    "Content": "Ağ optimizasyonu, ağ performansını artırmak ve verimliliği sağlamak için yapılan çalışmalar bütünüdür. Trafik yönetimi, önceliklendirme ve sıkıştırma gibi teknikler kullanılır."
+    "Content": "Ağ optimizasyonu, ağ performansını artırmak ve verimliliği sağlamak için yapılan çalışmalar bütünüdür. Trafik yönetimi, önceliklendirme ve sıkıştırma gibi teknikler kullanılır.",
+    "Department": 0
   },
   {
     "Category": "Ağ Yönetimi",
     "SubCategory": "Ağ Yedekleme",
-    "Content": "Ağ yedekleme, ağdaki verilerin ve yapılandırmaların düzenli olarak yedeklenmesidir. Veri kaybı durumunda ağın hızlı bir şekilde yeniden kurulmasını sağlar."
+    "Content": "Ağ yedekleme, ağdaki verilerin ve yapılandırmaların düzenli olarak yedeklenmesidir. Veri kaybı durumunda ağın hızlı bir şekilde yeniden kurulmasını sağlar.",
+    "Department": 0
   },
   {
     "Category": "Ağ Uygulamaları",
     "SubCategory": "Bulut Bilişim",
-    "Content": "Bulut bilişim, internet üzerinden sunulan bilgi işlem kaynaklarına (sunucular, depolama, yazılım) erişmeyi sağlar. Verilerin ve uygulamaların merkezi olarak yönetilmesini kolaylaştırır."
+    "Content": "Bulut bilişim, internet üzerinden sunulan bilgi işlem kaynaklarına (sunucular, depolama, yazılım) erişmeyi sağlar. Verilerin ve uygulamaların merkezi olarak yönetilmesini kolaylaştırır.",
+    "Department": 0
   },
   {
     "Category": "Ağ Uygulamaları",
     "SubCategory": "Büyük Veri",
-    "Content": "Büyük veri, çok büyük ve karmaşık veri kümelerini analiz ederek anlamlı bilgiler elde etmeyi amaçlar. Ağlar, büyük veri akışını yönetmek ve işlemek için kullanılır."
+    "Content": "Büyük veri, çok büyük ve karmaşık veri kümelerini analiz ederek anlamlı bilgiler elde etmeyi amaçlar. Ağlar, büyük veri akışını yönetmek ve işlemek için kullanılır.",
+    "Department": 0
   },
   {
     "Category": "Ağ Uygulamaları",
     "SubCategory": "Video Konferans",
-    "Content": "Video konferans, internet üzerinden gerçek zamanlı olarak sesli ve görüntülü iletişim kurmayı sağlar. İş toplantıları, eğitimler ve diğer iletişim amaçları için kullanılır."
+    "Content": "Video konferans, internet üzerinden gerçek zamanlı olarak sesli ve görüntülü iletişim kurmayı sağlar. İş toplantıları, eğitimler ve diğer iletişim amaçları için kullanılır.",
+    "Department": 0
   },
   {
     "Category": "Ağ Temelleri",
     "SubCategory": "Veri İletimi",
-    "Content": "Veri, ağlar aracılığıyla paketler halinde iletilir. Bu paketler, başlık ve yükten oluşur. Başlık, hedef adres ve diğer kontrol bilgilerini içerirken, yük, asıl veriyi içerir."
+    "Content": "Veri, ağlar aracılığıyla paketler halinde iletilir. Bu paketler, başlık ve yükten oluşur. Başlık, hedef adres ve diğer kontrol bilgilerini içerirken, yük, asıl veriyi içerir.",
+    "Department": 0
   },
   {
     "Category": "Ağ Temelleri",
     "SubCategory": "IP Adresleri",
-    "Content": "Her ağ cihazına, ağda benzersiz bir IP adresi atanır. Bu adres, cihazın ağdaki konumunu belirtir ve veri paketlerinin doğru hedefe yönlendirilmesini sağlar. IPv4 ve IPv6 olmak üzere iki ana IP adresi sürümü bulunur."
+    "Content": "Her ağ cihazına, ağda benzersiz bir IP adresi atanır. Bu adres, cihazın ağdaki konumunu belirtir ve veri paketlerinin doğru hedefe yönlendirilmesini sağlar. IPv4 ve IPv6 olmak üzere iki ana IP adresi sürümü bulunur.",
+    "Department": 0
   },
   {
     "Category": "Ağ Temelleri",
     "SubCategory": "Alan Adları",
-    "Content": "Alan adları, IP adreslerini insan tarafından okunabilir hale getiren isimlerdir. Örneğin, google.com bir alan adıdır ve belirli bir IP adresine karşılık gelir. DNS (Alan Adı Sistemi), alan adlarını IP adreslerine çevirir."
+    "Content": "Alan adları, IP adreslerini insan tarafından okunabilir hale getiren isimlerdir. Örneğin, google.com bir alan adıdır ve belirli bir IP adresine karşılık gelir. DNS (Alan Adı Sistemi), alan adlarını IP adreslerine çevirir.",
+    "Department": 0
   },
   {
     "Category": "Kablolu Ağlar",
     "SubCategory": "Ethernet",
-    "Content": "Ethernet, kablolu ağlarda en yaygın kullanılan teknolojilerden biridir. Genellikle CAT5, CAT6 veya CAT7 kabloları üzerinden veri iletimi gerçekleştirilir. Gigabit Ethernet ve 10 Gigabit Ethernet gibi farklı hız seçenekleri mevcuttur."
+    "Content": "Ethernet, kablolu ağlarda en yaygın kullanılan teknolojilerden biridir. Genellikle CAT5, CAT6 veya CAT7 kabloları üzerinden veri iletimi gerçekleştirilir. Gigabit Ethernet ve 10 Gigabit Ethernet gibi farklı hız seçenekleri mevcuttur.",
+    "Department": 0
   },
   {
     "Category": "Kablolu Ağlar",
     "SubCategory": "Fiber Optik",
-    "Content": "Fiber optik kablolar, veriyi ışık sinyalleriyle iletir. Yüksek bant genişliği ve uzun mesafelerde veri iletimi için idealdir. Genellikle telekomünikasyon ve veri merkezlerinde kullanılır."
+    "Content": "Fiber optik kablolar, veriyi ışık sinyalleriyle iletir. Yüksek bant genişliği ve uzun mesafelerde veri iletimi için idealdir. Genellikle telekomünikasyon ve veri merkezlerinde kullanılır.",
+    "Department": 0
   },
   {
     "Category": "Kablolu Ağlar",
     "SubCategory": "Koaksiyel Kablolar",
-    "Content": "Koaksiyel kablolar, iç iletken ve dış iletken katmanlarından oluşur. Genellikle televizyon yayınları ve kablolu internet bağlantıları için kullanılır."
+    "Content": "Koaksiyel kablolar, iç iletken ve dış iletken katmanlarından oluşur. Genellikle televizyon yayınları ve kablolu internet bağlantıları için kullanılır.",
+    "Department": 0
   },
   {
     "Category": "Kablosuz İletişim",
     "SubCategory": "Radyo Frekansları",
-    "Content": "Kablosuz iletişim, radyo frekansları aracılığıyla veri iletimini sağlar. Wi-Fi, Bluetooth ve mobil ağlar gibi farklı kablosuz teknolojiler, farklı frekans bantlarını kullanır."
+    "Content": "Kablosuz iletişim, radyo frekansları aracılığıyla veri iletimini sağlar. Wi-Fi, Bluetooth ve mobil ağlar gibi farklı kablosuz teknolojiler, farklı frekans bantlarını kullanır.",
+    "Department": 0
   },
   {
     "Category": "Kablosuz İletişim",
     "SubCategory": "Antenler",
-    "Content": "Antenler, radyo sinyallerini yaymak ve almak için kullanılır. Anten türü, kapsama alanı ve sinyal gücünü etkiler. Yönlü ve çok yönlü antenler gibi farklı tipler bulunur."
+    "Content": "Antenler, radyo sinyallerini yaymak ve almak için kullanılır. Anten türü, kapsama alanı ve sinyal gücünü etkiler. Yönlü ve çok yönlü antenler gibi farklı tipler bulunur.",
+    "Department": 0
   },
   {
     "Category": "Kablosuz İletişim",
     "SubCategory": "Modülasyon",
-    "Content": "Modülasyon, verinin radyo sinyallerine kodlanması işlemidir. Farklı modülasyon teknikleri, veri hızını ve sinyal kalitesini etkiler."
+    "Content": "Modülasyon, verinin radyo sinyallerine kodlanması işlemidir. Farklı modülasyon teknikleri, veri hızını ve sinyal kalitesini etkiler.",
+    "Department": 0
   },
   {
     "Category": "Ağ Güvenliği",
     "SubCategory": "Kimlik Doğrulama",
-    "Content": "Kimlik doğrulama, kullanıcıların veya cihazların kimliğini doğrulamak için kullanılan bir süreçtir. Kullanıcı adı ve parola, biyometrik veriler veya dijital sertifikalar gibi farklı yöntemler kullanılabilir."
+    "Content": "Kimlik doğrulama, kullanıcıların veya cihazların kimliğini doğrulamak için kullanılan bir süreçtir. Kullanıcı adı ve parola, biyometrik veriler veya dijital sertifikalar gibi farklı yöntemler kullanılabilir.",
+    "Department": 0
   },
   {
     "Category": "Ağ Güvenliği",
     "SubCategory": "Şifreleme",
-    "Content": "Şifreleme, veriyi okunamaz hale getirmek için kullanılan bir yöntemdir. Şifreleme algoritmaları, veriyi yalnızca yetkili kişilerin çözebileceği bir biçime dönüştürür."
+    "Content": "Şifreleme, veriyi okunamaz hale getirmek için kullanılan bir yöntemdir. Şifreleme algoritmaları, veriyi yalnızca yetkili kişilerin çözebileceği bir biçime dönüştürür.",
+    "Department": 0
   },
   {
     "Category": "Ağ Güvenliği",
     "SubCategory": "Sızma Testi",
-    "Content": "Sızma testi, bir ağın veya sistemin güvenlik açıklarını bulmak için yapılan bir simülasyon saldırısıdır. Etik hacker'lar tarafından gerçekleştirilir ve güvenlik önlemlerinin etkinliğini değerlendirmeye yardımcı olur."
+    "Content": "Sızma testi, bir ağın veya sistemin güvenlik açıklarını bulmak için yapılan bir simülasyon saldırısıdır. Etik hacker'lar tarafından gerçekleştirilir ve güvenlik önlemlerinin etkinliğini değerlendirmeye yardımcı olur.",
+    "Department": 0
   },
   {
     "Category": "Ağ Performansı",
     "SubCategory": "Gecikme (Latency)",
-    "Content": "Gecikme, verinin bir noktadan diğerine ulaşması için geçen süredir. Düşük gecikme, gerçek zamanlı uygulamalar (örneğin video konferans) için önemlidir."
+    "Content": "Gecikme, verinin bir noktadan diğerine ulaşması için geçen süredir. Düşük gecikme, gerçek zamanlı uygulamalar (örneğin video konferans) için önemlidir.",
+    "Department": 0
   },
   {
     "Category": "Ağ Performansı",
     "SubCategory": "Bant Genişliği",
-    "Content": "Bant genişliği, bir ağ bağlantısının belirli bir sürede iletebileceği veri miktarıdır. Yüksek bant genişliği, büyük dosyaların hızlı bir şekilde indirilmesi veya yüklenmesi için gereklidir."
+    "Content": "Bant genişliği, bir ağ bağlantısının belirli bir sürede iletebileceği veri miktarıdır. Yüksek bant genişliği, büyük dosyaların hızlı bir şekilde indirilmesi veya yüklenmesi için gereklidir.",
+    "Department": 0
   },
   {
     "Category": "Ağ Performansı",
     "SubCategory": "Kayıp Paket",
-    "Content": "Kayıp paket, veri iletimi sırasında kaybolan paketlerdir. Kayıp paketler, ağ performansını olumsuz etkileyebilir ve veri tekrarı gerektirebilir."
+    "Content": "Kayıp paket, veri iletimi sırasında kaybolan paketlerdir. Kayıp paketler, ağ performansını olumsuz etkileyebilir ve veri tekrarı gerektirebilir.",
+    "Department": 0
   },
   {
     "Category": "Ağ Mimarileri",
     "SubCategory": "İstemci-Sunucu",
-    "Content": "İstemci-sunucu modelinde, istemciler (örneğin bilgisayarlar) sunuculardan (örneğin web sunucuları) hizmet talep eder. Sunucular, isteklere yanıt verir ve gerekli verileri veya kaynakları sağlar."
+    "Content": "İstemci-sunucu modelinde, istemciler (örneğin bilgisayarlar) sunuculardan (örneğin web sunucuları) hizmet talep eder. Sunucular, isteklere yanıt verir ve gerekli verileri veya kaynakları sağlar.",
+    "Department": 0
   },
   {
     "Category": "Ağ Mimarileri",
     "SubCategory": "Eşler Arası (P2P)",
-    "Content": "Eşler arası ağlarda, tüm cihazlar hem istemci hem de sunucu olarak hareket edebilir. Kaynaklar, doğrudan cihazlar arasında paylaşılır. Torrent ağları, P2P ağlarına bir örnektir."
+    "Content": "Eşler arası ağlarda, tüm cihazlar hem istemci hem de sunucu olarak hareket edebilir. Kaynaklar, doğrudan cihazlar arasında paylaşılır. Torrent ağları, P2P ağlarına bir örnektir.",
+    "Department": 0
   },
   {
     "Category": "Ağ Mimarileri",
     "SubCategory": "Bulut Bilişim Mimarisi",
-    "Content": "Bulut bilişim mimarisi, kaynakların (sunucular, depolama, yazılım) internet üzerinden sunulduğu bir yapıdır. Kullanıcılar, bu kaynaklara istedikleri zaman ve yerden erişebilirler."
+    "Content": "Bulut bilişim mimarisi, kaynakların (sunucular, depolama, yazılım) internet üzerinden sunulduğu bir yapıdır. Kullanıcılar, bu kaynaklara istedikleri zaman ve yerden erişebilirler.",
+    "Department": 0
+  },
+  {
+    "Category": "asd",
+    "SubCategory": "ASD",
+    "Content": "asd",
+    "Department": 3
   }
 ]

@@ -14,6 +14,14 @@ builder.Services.AddResponseCaching();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Add session support
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // Register memory cache
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
@@ -56,6 +64,9 @@ app.UseHttpsRedirection();
 
 // Add response caching middleware
 app.UseResponseCaching();
+
+// Use session before MVC
+app.UseSession();
 
 // Add middleware to always set cache control headers
 app.Use(async (context, next) =>

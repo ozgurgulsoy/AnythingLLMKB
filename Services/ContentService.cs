@@ -66,6 +66,21 @@ namespace TestKB.Services
         }
         
         /// <summary>
+        /// Verilen kategori, alt kategori ve departmana göre içerik öğesini getirir
+        /// </summary>
+        public async Task<ContentItem> GetByCategoryAndSubcategoryAsync(string category, string subcategory, Department department)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                throw new ArgumentException("Kategori boş olamaz", nameof(category));
+                
+            var items = await GetAllAsync();
+            return items.FirstOrDefault(i => 
+                string.Equals(i.Category.Trim(), category.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(i.SubCategory?.Trim(), subcategory?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                i.Department == department);
+        }
+        
+        /// <summary>
         /// Yeni bir içerik öğesi ekler
         /// </summary>
         public async Task<ContentItem> CreateAsync(ContentItem item)
@@ -78,13 +93,14 @@ namespace TestKB.Services
                 
             var items = await GetAllAsync(true); // Always get fresh data
             
-            // Check if item already exists
+            // Check if item already exists with the same department
             var exists = items.Any(i => 
                 string.Equals(i.Category.Trim(), item.Category.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(i.SubCategory?.Trim(), item.SubCategory?.Trim(), StringComparison.OrdinalIgnoreCase));
+                string.Equals(i.SubCategory?.Trim(), item.SubCategory?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                i.Department == item.Department);
                 
             if (exists)
-                throw new InvalidOperationException($"İçerik zaten mevcut: {item.Category}/{item.SubCategory}");
+                throw new InvalidOperationException($"İçerik zaten mevcut: {item.Category}/{item.SubCategory} (Departman: {item.Department})");
                 
             // Add the new item
             items.Add(item);
@@ -93,7 +109,8 @@ namespace TestKB.Services
             // Invalidate cache
             InvalidateCache();
             
-            _logger.LogInformation("Yeni içerik eklendi: {Category}/{SubCategory}", item.Category, item.SubCategory);
+            _logger.LogInformation("Yeni içerik eklendi: {Category}/{SubCategory} (Departman: {Department})", 
+                item.Category, item.SubCategory, item.Department);
             
             return item;
         }
@@ -111,13 +128,14 @@ namespace TestKB.Services
                 
             var items = await GetAllAsync(true); // Always get fresh data
             
-            // Find the item to update
+            // Find the item to update, matching department as well
             var existingItem = items.FirstOrDefault(i => 
                 string.Equals(i.Category.Trim(), item.Category.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(i.SubCategory?.Trim(), item.SubCategory?.Trim(), StringComparison.OrdinalIgnoreCase));
+                string.Equals(i.SubCategory?.Trim(), item.SubCategory?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                i.Department == item.Department);
                 
             if (existingItem == null)
-                throw new InvalidOperationException($"İçerik bulunamadı: {item.Category}/{item.SubCategory}");
+                throw new InvalidOperationException($"İçerik bulunamadı: {item.Category}/{item.SubCategory} (Departman: {item.Department})");
                 
             // Update the item
             existingItem.Content = item.Content;
@@ -127,7 +145,8 @@ namespace TestKB.Services
             // Invalidate cache
             InvalidateCache();
             
-            _logger.LogInformation("İçerik güncellendi: {Category}/{SubCategory}", item.Category, item.SubCategory);
+            _logger.LogInformation("İçerik güncellendi: {Category}/{SubCategory} (Departman: {Department})", 
+                item.Category, item.SubCategory, item.Department);
             
             return existingItem;
         }
@@ -175,6 +194,34 @@ namespace TestKB.Services
         }
         
         /// <summary>
+        /// İçerik öğesini belirli bir departman için siler
+        /// </summary>
+        public async Task DeleteAsync(string category, string subcategory, Department department)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                throw new ArgumentException("Kategori boş olamaz", nameof(category));
+                
+            var items = await GetAllAsync(true); // Always get fresh data
+            
+            // Find and remove the item with matching department
+            var removed = items.RemoveAll(i => 
+                string.Equals(i.Category.Trim(), category.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(i.SubCategory?.Trim(), subcategory?.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                i.Department == department);
+                
+            if (removed == 0)
+                throw new InvalidOperationException($"Silinecek içerik bulunamadı: {category}/{subcategory} (Departman: {department})");
+                
+            await _repository.SaveAsync(items);
+            
+            // Invalidate cache
+            InvalidateCache();
+            
+            _logger.LogInformation("İçerik silindi: {Category}/{SubCategory} (Departman: {Department})", 
+                category, subcategory, department);
+        }
+        
+        /// <summary>
         /// Kategori ismine göre içerik öğelerini siler
         /// </summary>
         public async Task<int> DeleteByCategoryAsync(string category)
@@ -199,6 +246,59 @@ namespace TestKB.Services
             _logger.LogInformation("Kategori silindi: {Category}, {Count} öğe silindi", category, removedCount);
             
             return removedCount;
+        }
+        
+        /// <summary>
+        /// Kategori ismine ve departmana göre içerik öğelerini siler
+        /// </summary>
+        public async Task<int> DeleteByCategoryAsync(string category, Department department)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                throw new ArgumentException("Kategori boş olamaz", nameof(category));
+                
+            var items = await GetAllAsync(true); // Always get fresh data
+            
+            // Remove all items with matching category and department
+            var removedCount = items.RemoveAll(i => 
+                string.Equals(i.Category.Trim(), category.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                i.Department == department);
+                
+            if (removedCount == 0)
+                return 0; // No items removed
+                
+            await _repository.SaveAsync(items);
+            
+            // Invalidate cache
+            InvalidateCache();
+            
+            _logger.LogInformation("Kategori silindi: {Category} (Departman: {Department}), {Count} öğe silindi", 
+                category, department, removedCount);
+            
+            return removedCount;
+        }
+        
+        /// <summary>
+        /// Belirli bir departmanın içerik öğelerini getirir
+        /// </summary>
+        public async Task<List<ContentItem>> GetByDepartmentAsync(Department department)
+        {
+            var items = await GetAllAsync();
+            return items.Where(i => i.Department == department).ToList();
+        }
+        
+        /// <summary>
+        /// Belirli bir departman ve kategorinin içerik öğelerini getirir
+        /// </summary>
+        public async Task<List<ContentItem>> GetByDepartmentAndCategoryAsync(Department department, string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                throw new ArgumentException("Kategori boş olamaz", nameof(category));
+                
+            var items = await GetAllAsync();
+            return items.Where(i => 
+                i.Department == department &&
+                string.Equals(i.Category.Trim(), category.Trim(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
         
         /// <summary>

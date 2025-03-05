@@ -1,4 +1,6 @@
-﻿namespace TestKB.Models.ViewModels
+﻿using TestKB.Models;
+
+namespace TestKB.Models.ViewModels
 {
     public class EditContentViewModel
     {
@@ -12,6 +14,8 @@
         public ExtendContentViewModel ExtendContent { get; set; }
 
         public List<ContentItem> ContentItems { get; set; }
+        
+        // Added property to track the selected department 
+        public Department SelectedDepartment { get; set; }
     }
-
 }

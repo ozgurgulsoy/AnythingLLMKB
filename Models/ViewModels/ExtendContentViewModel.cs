@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using TestKB.Models;
 
 namespace TestKB.Models.ViewModels
 {
@@ -19,5 +20,8 @@ namespace TestKB.Models.ViewModels
         // Change these to nullable to avoid automatic "required" errors
         public string? EditedCategory { get; set; }
         public string? EditedSubCategory { get; set; }
+        
+        [Required(ErrorMessage = "Departman seçimi zorunludur.")]
+        public Department Department { get; set; }
     }
 }

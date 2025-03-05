@@ -3,25 +3,37 @@
     ViewData["Title"] = "Ana Sayfa";
     Layout = "_Layout"; // Uses the layout with the navbar
     var selectedCategory = Model.SelectedCategory;
+    var selectedDepartment = Model.SelectedDepartment;
 }
 
 <!-- Use a fluid container to span full width -->
 <div class="container-fluid mt-4">
     <!-- Centered Filter Form -->
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <form asp-controller="Content" method="get" asp-action="Index" class="mb-4">
                 <div class="form-row align-items-end">
-                    <div class="col-md-8">
+                    <div class="col-md-4">
                         <label for="categoryFilter">Kategori Seç</label>
                         <select id="categoryFilter" name="category" class="form-control">
                             <option value="">Tüm Kategoriler</option>
                             @foreach (var category in Model.AllCategories)
                             {
                                 var selectedAttr = string.Equals(category, selectedCategory, StringComparison.OrdinalIgnoreCase)
-                                ? "selected"
-                                : "";
+                                    ? "selected"
+                                    : "";
                                 @Html.Raw($"<option value='{category}' {selectedAttr}>{category}</option>")
+                                ;
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="departmentFilter">Departman Seç</label>
+                        <select id="departmentFilter" name="dept" class="form-control">
+                            @foreach (var dept in Enum.GetValues(typeof(Department)))
+                            {
+                                var selectedAttr = (Department)dept == selectedDepartment ? "selected" : "";
+                                @Html.Raw($"<option value='{dept}' {selectedAttr}>{dept}</option>")
                                 ;
                             }
                         </select>
@@ -31,6 +43,17 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Display current filters -->
+    <div class="row justify-content-center mb-3">
+        <div class="col-md-8">
+            <div class="alert alert-info" role="alert">
+                <strong>Aktif Filtreler:</strong>
+                Departman: @selectedDepartment,
+                Kategori: @(string.IsNullOrEmpty(selectedCategory) ? "Tümü" : selectedCategory)
+            </div>
         </div>
     </div>
 
@@ -46,6 +69,9 @@
                             <h5 class="card-title">@item.Category</h5>
                             <h6 class="card-subtitle mb-2 text-muted">@item.SubCategory</h6>
                             <p class="card-text">@item.Content</p>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <small class="text-muted">Departman: @item.Department</small>
                         </div>
                     </div>
                 </div>

@@ -1,5 +1,5 @@
-﻿// Services/IContentManager.cs
-
+﻿// Services/Interfaces/IContentManager.cs
+using TestKB.Models;
 using TestKB.Models.ViewModels;
 
 namespace TestKB.Services.Interfaces
@@ -12,7 +12,7 @@ namespace TestKB.Services.Interfaces
         /// <summary>
         /// İçerik listesi görünüm modelini oluşturur
         /// </summary>
-        Task<ContentListViewModel> BuildContentListViewModelAsync(string category);
+        Task<ContentListViewModel> BuildContentListViewModelAsync(string category, Department department);
         
         /// <summary>
         /// Düzenleme sayfası görünüm modelini oluşturur
@@ -22,7 +22,7 @@ namespace TestKB.Services.Interfaces
         /// <summary>
         /// Var olan içeriği düzenlemek için görünüm modeli oluşturur
         /// </summary>
-        Task<ExtendContentViewModel> CreateExtendContentViewModelAsync(string selectedCategory, string selectedSubCategory);
+        Task<ExtendContentViewModel> CreateExtendContentViewModelAsync(string selectedCategory, string selectedSubCategory, Department department);
         
         /// <summary>
         /// Yeni içerik ekler

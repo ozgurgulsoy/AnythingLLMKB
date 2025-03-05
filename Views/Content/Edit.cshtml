@@ -1,4 +1,5 @@
 ﻿@model TestKB.Models.ViewModels.EditContentViewModel
+@using TestKB.Models
 @{
     ViewData["Title"] = "İçerik Düzenle";
     Layout = "_Layout";
@@ -8,10 +9,12 @@
     var validationErrors = TempData["ValidationErrors"] as IEnumerable<string>;
     var activeTab = TempData["ActiveTab"] as string ?? "newContent";
     var refreshTime = ViewBag.LastRefreshedTime ?? DateTime.Now.ToString("HH:mm:ss.fff");
+    var currentDepartment = Model.SelectedDepartment;
 }
 
 <!-- Add a hidden timestamp to track when the data was last refreshed -->
 <input type="hidden" id="dataRefreshTime" value="@refreshTime" />
+<input type="hidden" id="currentDepartment" value="@((int)currentDepartment)" />
 
 <!-- JSON verisini JS tarafına aktarmak için -->
 <script type="text/javascript">
@@ -71,19 +74,27 @@
                             <label asp-for="NewContent.Category" class="font-weight-bold">Yeni Kategori</label>
                             <input asp-for="NewContent.Category" class="form-control" id="newCategory"
                                    placeholder="Kategori ismi giriniz" />
-                            <!-- Removed inline error message here -->
                         </div>
                         <div class="form-group">
                             <label asp-for="NewContent.SubCategory" class="font-weight-bold">Yeni Alt Kategori</label>
                             <input asp-for="NewContent.SubCategory" class="form-control" id="newSubCategory"
                                    placeholder="Alt kategori ismi giriniz" />
-                            <!-- Removed inline error message here -->
                         </div>
                         <div class="form-group">
                             <label asp-for="NewContent.Content" class="font-weight-bold">İçerik</label>
                             <textarea asp-for="NewContent.Content" class="form-control" id="newContent"
                                       rows="5" placeholder="İçerik giriniz"></textarea>
-                            <!-- Removed inline error message here -->
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="NewContent.Department" class="font-weight-bold">Departman</label>
+                            <select asp-for="NewContent.Department" class="form-control" id="newDepartment">
+                                @foreach (var dept in Enum.GetValues(typeof(Department)))
+                                {
+                                    var isSelected = (Department)dept == currentDepartment;
+                                    @if (isSelected) { <option value="@dept" selected>@dept</option> }
+                                    else { <option value="@dept">@dept</option> }
+                                }
+                            </select>
                         </div>
                         <button type="submit" class="btn btn-light border-success text-success">
                             <i class="fa fa-check mr-1"></i> Yeni İçerik Ekle
@@ -123,7 +134,6 @@
                                     </button>
                                 </div>
                             </div>
-                            <!-- Removed inline error message here -->
                         </div>
 
                         <!-- Kategori düzenleme alanı (gizli) -->
@@ -166,7 +176,6 @@
                                         </button>
                                     </div>
                                 </div>
-                                <!-- Removed inline error message here -->
                             </div>
 
                             <!-- Gizli alan: kullanıcı alt kategori seçimini tutar -->
@@ -200,13 +209,31 @@
                                 </div>
                             </div>
 
+                            <!-- Departman seçimi -->
+                            <div class="form-group">
+                                <label asp-for="ExtendContent.Department" class="font-weight-bold">Departman</label>
+                                <select asp-for="ExtendContent.Department" class="form-control" id="extendDepartment">
+                                    @foreach (var dept in Enum.GetValues(typeof(Department)))
+                                    {
+                                        var isSelected = (Department)dept == currentDepartment;
+                                        @if (isSelected)
+                                        {
+                                            <option value="@dept" selected>@dept</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@dept">@dept</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
                             <!-- İçerik alanı -->
                             <div class="form-group" id="contentDiv" style="display:none;">
                                 <label asp-for="ExtendContent.Content" class="font-weight-bold">İçerik</label>
                                 <textarea asp-for="ExtendContent.Content" class="form-control"
                                           id="extendContent" rows="5"
                                           placeholder="İçerik ekleyiniz"></textarea>
-                                <!-- Removed inline error message here -->
                             </div>
                             <button type="submit" class="btn btn-light border-primary text-primary"
                                     id="submitContentBtn" style="display:none;">
@@ -233,7 +260,6 @@
                                         }
                                     }
                                 </select>
-                                <!-- Removed inline error message here -->
                             </div>
                             <button type="button" class="btn btn-light border-danger text-danger"
                                     onclick="confirmDeleteCategory()">

@@ -1,10 +1,4 @@
-﻿
-// Services/ContentManager.cs
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿// Services/ContentManager.cs
 using TestKB.Models;
 using TestKB.Models.ViewModels;
 using TestKB.Services.Interfaces;
@@ -37,7 +31,7 @@ namespace TestKB.Services
         /// <summary>
         /// İçerik listesi görünüm modelini oluşturur
         /// </summary>
-        public async Task<ContentListViewModel> BuildContentListViewModelAsync(string category)
+        public async Task<ContentListViewModel> BuildContentListViewModelAsync(string category, Department department)
         {
             // Get all content items
             var items = await _contentService.GetAllAsync();
@@ -45,14 +39,18 @@ namespace TestKB.Services
             // Get categories (can be cached)
             var categories = await GetAllCategoriesAsync();
             
-            // Filter items by category if needed
-            var filteredItems = FilterItemsByCategory(items, category);
+            // Filter items by category and department
+            var filteredItems = items.Where(i => 
+                (string.IsNullOrWhiteSpace(category) || i.Category.Equals(category, StringComparison.OrdinalIgnoreCase)) && 
+                i.Department == department
+            ).ToList();
             
             return new ContentListViewModel
             {
                 ContentItems = filteredItems,
                 AllCategories = categories,
-                SelectedCategory = category
+                SelectedCategory = category,
+                SelectedDepartment = department
             };
         }
         
@@ -69,13 +67,26 @@ namespace TestKB.Services
             var categories = GetDistinctOrderedCategories(items);
             var subCategories = BuildSubcategoryDictionary(items);
             
+            // Set department in view model
+            Department department = Department.Yazılım; // Default
+            
+            if (newContent != null && newContent.Department != 0)
+            {
+                department = newContent.Department;
+            }
+            else if (extendContent != null && extendContent.Department != 0)
+            {
+                department = extendContent.Department;
+            }
+            
             return new EditContentViewModel
             {
                 ExistingCategories = categories,
                 ExistingSubCategories = subCategories,
                 NewContent = newContent ?? new NewContentViewModel(),
                 ExtendContent = extendContent ?? new ExtendContentViewModel(),
-                ContentItems = items 
+                ContentItems = items,
+                SelectedDepartment = department
             };
         }
         
@@ -83,20 +94,21 @@ namespace TestKB.Services
         /// Var olan içeriği düzenlemek için görünüm modeli oluşturur
         /// </summary>
         public async Task<ExtendContentViewModel> CreateExtendContentViewModelAsync(
-            string selectedCategory, string selectedSubCategory)
+            string selectedCategory, string selectedSubCategory, Department department)
         {
-            _logger.LogInformation("ExtendContentViewModel oluşturuluyor. Category: {Category}, SubCategory: {SubCategory}", 
-                selectedCategory, selectedSubCategory);
+            _logger.LogInformation("ExtendContentViewModel oluşturuluyor. Category: {Category}, SubCategory: {SubCategory}, Department: {Department}", 
+                selectedCategory, selectedSubCategory, department);
                 
             var model = new ExtendContentViewModel
             {
                 SelectedCategory = selectedCategory,
-                SelectedSubCategory = selectedSubCategory
+                SelectedSubCategory = selectedSubCategory,
+                Department = department
             };
             
             if (!string.IsNullOrWhiteSpace(selectedCategory) && !string.IsNullOrWhiteSpace(selectedSubCategory))
             {
-                var item = await _contentService.GetByCategoryAndSubcategoryAsync(selectedCategory, selectedSubCategory);
+                var item = await _contentService.GetByCategoryAndSubcategoryAsync(selectedCategory, selectedSubCategory, department);
                 
                 if (item != null)
                 {
@@ -105,8 +117,8 @@ namespace TestKB.Services
                 }
                 else
                 {
-                    _logger.LogWarning("Bu kategori ve alt kategori için içerik bulunamadı: {Category}/{SubCategory}", 
-                        selectedCategory, selectedSubCategory);
+                    _logger.LogWarning("Bu kategori ve alt kategori için içerik bulunamadı: {Category}/{SubCategory} (Department: {Department})", 
+                        selectedCategory, selectedSubCategory, department);
                 }
             }
             
@@ -125,7 +137,8 @@ namespace TestKB.Services
             {
                 Category = model.Category.Trim(),
                 SubCategory = model.SubCategory?.Trim(),
-                Content = model.Content.Trim()
+                Content = model.Content.Trim(),
+                Department = model.Department // Include department
             };
             
             await _contentService.CreateAsync(newItem);
@@ -133,7 +146,8 @@ namespace TestKB.Services
             // Invalidate category-related caches
             InvalidateCategoryCaches();
             
-            _logger.LogInformation("Yeni içerik eklendi: {Category}/{SubCategory}", model.Category, model.SubCategory);
+            _logger.LogInformation("Yeni içerik eklendi: {Category}/{SubCategory} (Department: {Department})", 
+                model.Category, model.SubCategory, model.Department);
         }
         
         /// <summary>
@@ -171,12 +185,13 @@ namespace TestKB.Services
             }
             
             // Create or update the content item
-            await UpdateOrCreateContentItem(chosenCategory, actualSubCategory, model.Content?.Trim());
+            await UpdateOrCreateContentItem(chosenCategory, actualSubCategory, model.Content?.Trim(), model.Department);
             
             // Invalidate category-related caches
             InvalidateCategoryCaches();
             
-            _logger.LogInformation("İçerik güncellendi: {Category}/{SubCategory}", chosenCategory, actualSubCategory);
+            _logger.LogInformation("İçerik güncellendi: {Category}/{SubCategory} (Department: {Department})", 
+                chosenCategory, actualSubCategory, model.Department);
         }
         
         /// <summary>
@@ -250,7 +265,8 @@ namespace TestKB.Services
             {
                 Category = category,
                 SubCategory = newSubCategory,
-                Content = string.Empty
+                Content = string.Empty,
+                Department = Department.Yazılım // Default to Software department, could be changed
             };
             
             await _contentService.CreateAsync(newItem);
@@ -367,6 +383,16 @@ namespace TestKB.Services
         }
         
         /// <summary>
+        /// Departmana göre içerik öğelerini filtreler
+        /// </summary>
+        private List<ContentItem> FilterItemsByDepartment(List<ContentItem> items, Department department)
+        {
+            return items
+                .Where(i => i.Department == department)
+                .ToList();
+        }
+        
+        /// <summary>
         /// Kullanılacak asıl alt kategoriyi belirler
         /// </summary>
         private string DetermineActualSubcategory(
@@ -437,10 +463,10 @@ namespace TestKB.Services
         /// <summary>
         /// İçerik öğesini günceller veya yeni oluşturur
         /// </summary>
-        private async Task UpdateOrCreateContentItem(string category, string subcategory, string content)
+        private async Task UpdateOrCreateContentItem(string category, string subcategory, string content, Department department)
         {
             // Try to get existing item
-            var item = await _contentService.GetByCategoryAndSubcategoryAsync(category, subcategory);
+            var item = await _contentService.GetByCategoryAndSubcategoryAsync(category, subcategory, department);
             
             if (item != null)
             {
@@ -455,7 +481,8 @@ namespace TestKB.Services
                 {
                     Category = category,
                     SubCategory = subcategory,
-                    Content = content ?? string.Empty
+                    Content = content ?? string.Empty,
+                    Department = department
                 };
                 
                 await _contentService.CreateAsync(newItem);

@@ -1,32 +1,18 @@
-﻿// Middleware/GlobalExceptionHandlerMiddleware.cs
-using System;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+﻿using System.Text.Json;
 using TestKB.Services;
 using TestKB.Services.Interfaces;
 
 namespace TestKB.Middleware
 {
-    /// <summary>
-    /// Tüm uygulama genelinde istisnaları yakalayan middleware.
-    /// </summary>
-    public class GlobalExceptionHandlerMiddleware
-    {
-        private readonly RequestDelegate _next;
-        private readonly ILogger<GlobalExceptionHandlerMiddleware> _logger;
-        private readonly IErrorHandlingService _errorHandlingService;
 
-        public GlobalExceptionHandlerMiddleware(
-            RequestDelegate next,
-            ILogger<GlobalExceptionHandlerMiddleware> logger,
-            IErrorHandlingService errorHandlingService)
-        {
-            _next = next ?? throw new ArgumentNullException(nameof(next));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
-        }
+    public class GlobalExceptionHandlerMiddleware(
+        RequestDelegate next,
+        ILogger<GlobalExceptionHandlerMiddleware> logger,
+        IErrorHandlingService errorHandlingService)
+    {
+        private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
+        private readonly ILogger<GlobalExceptionHandlerMiddleware> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly IErrorHandlingService _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
 
         public async Task InvokeAsync(HttpContext context)
         {

@@ -1,39 +1,73 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using TestKB.Models;
 using TestKB.Models.ViewModels;
 using TestKB.Services.Interfaces;
-
+using TestKB.Extensions;
+using MSSession = Microsoft.AspNetCore.Http.SessionExtensions;
 namespace TestKB.Controllers
 {
-    public class ContentController(
-        IContentManager contentManager,
-        IWebHostEnvironment env,
-        ILogger<ContentController> logger,
-        IErrorHandlingService errorHandlingService,
-        IContentService contentService)
-        : Controller
+    public class ContentController : Controller
     {
-        private readonly IContentManager _contentManager = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
-        private readonly IWebHostEnvironment _env = env ?? throw new ArgumentNullException(nameof(env));
-        private readonly ILogger<ContentController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        private readonly IErrorHandlingService _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
-        private readonly IContentService _contentService = contentService ?? throw new ArgumentNullException(nameof(contentService));
+        private readonly IContentManager _contentManager;
+        private readonly IWebHostEnvironment _env;
+        private readonly ILogger<ContentController> _logger;
+        private readonly IErrorHandlingService _errorHandlingService;
+        private readonly IContentService _contentService;
+
+        public ContentController(
+            IContentManager contentManager,
+            IWebHostEnvironment env,
+            ILogger<ContentController> logger,
+            IErrorHandlingService errorHandlingService,
+            IContentService contentService)
+        {
+            _contentManager = contentManager ?? throw new ArgumentNullException(nameof(contentManager));
+            _env = env ?? throw new ArgumentNullException(nameof(env));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
+            _contentService = contentService ?? throw new ArgumentNullException(nameof(contentService));
+        }
         
         public IActionResult DepartmentSelect() => View();
         
         [HttpPost]
         public IActionResult SelectDepartment(Department department)
         {
-            return RedirectToAction("Index", new { dept = department });
+            // Store selected department in session using fully qualified method
+            MSSession.SetInt32(HttpContext.Session, "SelectedDepartment", (int)department);
+            _logger.LogInformation("Departman seçildi: {Department}", department);
+            return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> Index(string category, Department? dept)
+        // Helper method to get current department from session
+        private Department GetCurrentDepartment()
+        {
+            var deptValue = MSSession.GetInt32(HttpContext.Session, "SelectedDepartment");
+            if (!deptValue.HasValue)
+            {
+                // Default to first department if none selected
+                var defaultDept = Department.Yazılım;
+                MSSession.SetInt32(HttpContext.Session, "SelectedDepartment", (int)defaultDept);
+                return defaultDept;
+            }
+            return (Department)deptValue.Value;
+        }
+
+        public async Task<IActionResult> Index(string category, Department? dept = null)
         {
             try
             {
-                var viewModel = await _contentManager.BuildContentListViewModelAsync(category);
+                // Use department from parameter or session
+                Department currentDepartment = dept ?? GetCurrentDepartment();
+                
+                // Update session if department was provided in request
+                if (dept.HasValue)
+                {
+                    MSSession.SetInt32(HttpContext.Session, "SelectedDepartment", (int)dept.Value);
+                }
+                
+                var viewModel = await _contentManager.BuildContentListViewModelAsync(category, currentDepartment);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -59,15 +93,21 @@ namespace TestKB.Controllers
                 _logger.LogInformation("Edit sayfası başlatılıyor. Category: {Category}, SubCategory: {SubCategory}", 
                     selectedCategory, selectedSubCategory);
                 
+                // Get current department from session
+                Department department = GetCurrentDepartment();
+                
                 // Get fresh data
                 var freshItems = await _contentService.GetAllAsync(true);
                 
                 // Create the view model
                 var extendModel = await _contentManager.CreateExtendContentViewModelAsync(
-                    selectedCategory, selectedSubCategory);
+                    selectedCategory, selectedSubCategory, department);
+                
+                // Set the current department in the new content model
+                var newContentModel = new NewContentViewModel { Department = department };
                 
                 var viewModel = await _contentManager.BuildEditContentViewModelAsync(
-                    new NewContentViewModel(), extendModel);
+                    newContentModel, extendModel);
                 
                 // Add timestamp to see the exact time this was generated
                 ViewBag.LastRefreshedTime = DateTime.Now.ToString("HH:mm:ss.fff");
@@ -109,6 +149,12 @@ namespace TestKB.Controllers
                     TempData["ErrorMessage"] = error.Message;
                     TempData["ActiveTab"] = "newContent";
                     return View("Edit", viewModel);
+                }
+
+                // Ensure department is set if not provided
+                if (model.Department == 0)
+                {
+                    model.Department = GetCurrentDepartment();
                 }
 
                 await _contentManager.AddNewContentAsync(model);
@@ -156,6 +202,12 @@ namespace TestKB.Controllers
                     TempData["ErrorMessage"] = error.Message;
                     TempData["ActiveTab"] = "extendContent";
                     return View("Edit", viewModel);
+                }
+
+                // Ensure department is set if not provided
+                if (model.Department == 0)
+                {
+                    model.Department = GetCurrentDepartment();
                 }
 
                 await _contentManager.UpdateContentAsync(model);
