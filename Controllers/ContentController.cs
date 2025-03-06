@@ -84,29 +84,39 @@ namespace TestKB.Controllers
         {
             try
             {
-                _logger.LogInformation("Edit sayfası başlatılıyor. Category: {Category}, SubCategory: {SubCategory}", 
+                _logger.LogInformation("Edit sayfası başlatılıyor. Category: {Category}, SubCategory: {SubCategory}",
                     selectedCategory, selectedSubCategory);
-                
+
                 // Get current department from session
                 Department department = GetCurrentDepartment();
-                
+                _logger.LogInformation("Current department: {Department}", department);
+
                 // Get fresh data
                 var freshItems = await _contentService.GetAllAsync(true);
-                
+
                 // Create the view model
                 var extendModel = await _contentManager.CreateExtendContentViewModelAsync(
                     selectedCategory, selectedSubCategory, department);
-                
+
+                // Check if we have content
+                _logger.LogInformation("Content retrieved: {ContentLength}",
+                    extendModel.Content?.Length ?? 0);
+
                 // Set the current department in the new content model
                 var newContentModel = new NewContentViewModel { Department = department };
-                
+
                 var viewModel = await _contentManager.BuildEditContentViewModelAsync(
                     newContentModel, extendModel);
-                
+
                 // Add timestamp to see the exact time this was generated
                 ViewBag.LastRefreshedTime = DateTime.Now.ToString("HH:mm:ss.fff");
+
+                // Make sure we're properly setting the department in the model
+                viewModel.SelectedDepartment = department;
+
+                // Serialize items with the current department for client-side use
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(freshItems);
-                
+
                 return View(viewModel);
             }
             catch (Exception ex)

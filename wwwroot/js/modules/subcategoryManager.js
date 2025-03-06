@@ -93,19 +93,40 @@ const subcategoryManager = (function () {
             const currentDepartment = departmentSelect ? parseInt(departmentSelect.value, 10) : (window.currentDepartment || 0);
 
             if (window.allItems && Array.isArray(window.allItems)) {
-                const matches = window.allItems.filter(function (item) {
-                    return item.category.toLowerCase() === categorySelect.value.toLowerCase() &&
-                        item.subCategory.toLowerCase() === subCategorySelect.value.toLowerCase() &&
-                        (currentDepartment === 0 || item.department === currentDepartment);
+                // Debug log to check values
+                console.log('Looking for match with:', {
+                    category: categorySelect.value.toLowerCase(),
+                    subcategory: subCategorySelect.value.toLowerCase(),
+                    department: currentDepartment
                 });
 
+                const matches = window.allItems.filter(function (item) {
+                    const match = item.category.toLowerCase() === categorySelect.value.toLowerCase() &&
+                        item.subCategory.toLowerCase() === subCategorySelect.value.toLowerCase() &&
+                        (currentDepartment === 0 || item.department === currentDepartment);
+
+                    // Debug each item being checked
+                    console.log('Checking item:', {
+                        category: item.category,
+                        subcategory: item.subCategory,
+                        department: item.department,
+                        matches: match
+                    });
+
+                    return match;
+                });
+
+                console.log('Matches found:', matches.length);
+
                 if (matches.length > 0) {
-                    content = matches[0].content;
+                    content = matches[0].content || "";
+                    console.log('Content found:', content);
                 }
             }
 
             if (extendContentBox) {
                 extendContentBox.value = content;
+                console.log('Set content box value to:', content);
             }
 
             if (contentDiv) {
