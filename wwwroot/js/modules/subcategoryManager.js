@@ -123,43 +123,20 @@ const subcategoryManager = (function () {
                 }
 
                 const matches = window.allItems.filter(function (item) {
-                    // Try both PascalCase and camelCase to be safe
-                    const category_value = item.Category || item.category;
-                    const subcategory_value = item.SubCategory || item.subCategory;
-                    const department_value = item.Department !== undefined ? item.Department :
-                        (item.department !== undefined ? item.department : 0);
-
-                    const categoryMatch = category_value &&
-                        category_value.toLowerCase() === categorySelect.value.toLowerCase();
-
-                    const subcategoryMatch = subcategory_value &&
-                        subcategory_value.toLowerCase() === subCategorySelect.value.toLowerCase();
-
-                    const departmentMatch = currentDepartment === 0 || department_value === currentDepartment;
-
-                    const match = categoryMatch && subcategoryMatch && departmentMatch;
-
-                    // Log detailed info for matching items
-                    if (match) {
-                        console.log('Found matching item:', item);
-                    }
-
-                    return match;
+                    return item.category.toLowerCase() === categorySelect.value.toLowerCase() &&
+                        item.subCategory.toLowerCase() === subCategorySelect.value.toLowerCase() &&
+                        (currentDepartment === 0 || item.department === currentDepartment);
                 });
 
                 console.log('Matches found:', matches.length);
 
                 if (matches.length > 0) {
-                    // Try both PascalCase and camelCase
-                    content = matches[0].Content || matches[0].content || "";
-                    console.log('Content found (length):', content.length);
-                    console.log('Content preview:', content.substring(0, 100) + (content.length > 100 ? '...' : ''));
+                    content = matches[0].content;
                 }
             }
 
             if (extendContentBox) {
                 extendContentBox.value = content;
-                console.log('Set content box value (length):', content.length);
             }
 
             if (contentDiv) {
