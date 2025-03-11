@@ -36,12 +36,12 @@ namespace TestKB.Services.Interfaces
         /// İçerik öğelerini toplu günceller
         /// </summary>
         Task UpdateManyAsync(List<ContentItem> items);
-        
+
         /// <summary>
         /// İçerik öğesini siler
         /// </summary>
-        Task DeleteAsync(string category, string subcategory);
-        
+        Task DeleteAsync(string category, string subcategory, Department department);
+
         /// <summary>
         /// Kategori ismine göre içerik öğelerini siler
         /// </summary>

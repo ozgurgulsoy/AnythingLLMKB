@@ -192,7 +192,7 @@ namespace TestKB.Services
             
             _logger.LogInformation("İçerik silindi: {Category}/{SubCategory}", category, subcategory);
         }
-        
+
         /// <summary>
         /// İçerik öğesini belirli bir departman için siler
         /// </summary>
@@ -200,27 +200,27 @@ namespace TestKB.Services
         {
             if (string.IsNullOrWhiteSpace(category))
                 throw new ArgumentException("Kategori boş olamaz", nameof(category));
-                
+
             var items = await GetAllAsync(true); // Always get fresh data
-            
+
             // Find and remove the item with matching department
-            var removed = items.RemoveAll(i => 
+            var removed = items.RemoveAll(i =>
                 string.Equals(i.Category.Trim(), category.Trim(), StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(i.SubCategory?.Trim(), subcategory?.Trim(), StringComparison.OrdinalIgnoreCase) &&
                 i.Department == department);
-                
+
             if (removed == 0)
                 throw new InvalidOperationException($"Silinecek içerik bulunamadı: {category}/{subcategory} (Departman: {department})");
-                
+
             await _repository.SaveAsync(items);
-            
+
             // Invalidate cache
             InvalidateCache();
-            
-            _logger.LogInformation("İçerik silindi: {Category}/{SubCategory} (Departman: {Department})", 
+
+            _logger.LogInformation("İçerik silindi: {Category}/{SubCategory} (Departman: {Department})",
                 category, subcategory, department);
         }
-        
+
         /// <summary>
         /// Kategori ismine göre içerik öğelerini siler
         /// </summary>

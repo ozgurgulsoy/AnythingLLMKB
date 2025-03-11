@@ -5,6 +5,45 @@
     var selectedCategory = Model.SelectedCategory;
     var selectedDepartment = Model.SelectedDepartment;
 }
+<!-- Make sure Font Awesome is included -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+<!-- Add CSS styles for content delete functionality -->
+<style>
+    /* Content delete icon styles */
+    .content-delete-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+    }
+
+    .card:hover .content-delete-icon {
+        opacity: 1;
+    }
+
+    /* Make sure the card has position relative for absolute positioning of the icon */
+    .card {
+        transition: opacity 0.3s ease;
+        position: relative !important;
+        overflow: visible !important;
+    }
+
+    /* Add some styling for the icon */
+    .fa-trash {
+        font-size: 16px;
+    }
+</style>
 
 <!-- Use a fluid container to span full width -->
 <div class="container-fluid mt-4">
@@ -49,6 +88,14 @@
                             <h5 class="card-title">@item.Category</h5>
                             <h6 class="card-subtitle mb-2 text-muted">@item.SubCategory</h6>
                             <p class="card-text">@item.Content</p>
+
+                            <!-- Trash icon that appears on hover -->
+                            <div class="content-delete-icon"
+                                 data-category="@item.Category"
+                                 data-subcategory="@item.SubCategory"
+                                 data-department="@item.Department">
+                                <i class="fa fa-trash text-danger"></i>
+                            </div>
                         </div>
                     </div>
                 </div>

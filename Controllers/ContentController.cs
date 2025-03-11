@@ -413,5 +413,45 @@ namespace TestKB.Controllers
                 return Json(error);
             }
         }
+        // Add to ContentController.cs
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteContent(string category, string subcategory, int department)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subcategory))
+                {
+                    return Json(_errorHandlingService.HandleValidationErrors(
+                        ["Kategori veya alt kategori bilgisi boş olamaz."]));
+                }
+
+                // Convert from int to Department enum
+                Department dept = (Department)department;
+
+                // Delete the specific content
+                await _contentService.DeleteAsync(category, subcategory, dept);
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(_errorHandlingService.CreateSuccessResponse("İçerik başarıyla silindi."));
+                }
+
+                TempData["SuccessMessage"] = "İçerik başarıyla silindi.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                var error = _errorHandlingService.HandleException(ex, "Deleting content");
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(error);
+                }
+
+                TempData["ErrorMessage"] = error.Message;
+                return RedirectToAction("Index");
+            }
+        }
     }
 }
