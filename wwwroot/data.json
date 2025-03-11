@@ -172,5 +172,11 @@
     "SubCategory": "Bulut Bilişim Mimarisi",
     "Content": "Bulut bilişim mimarisi, kaynakların (sunucular, depolama, yazılım) internet üzerinden sunulduğu bir yapıdır. Kullanıcılar, bu kaynaklara istedikleri zaman ve yerden erişebilirler.",
     "Department": 0
+  },
+  {
+    "Category": "Ağ Uygulamaları",
+    "SubCategory": "Bulut Bilişim",
+    "Content": "Bulut bilişim, internet üzerinden sunulan bilgi işlem kaynaklarına (sunucular, depolama, yazılım) erişmeyi sağlar. Verilerin ve uygulamaların merkezi olarak yönetilmesini kolaylaştırır.",
+    "Department": 3
   }
 ]

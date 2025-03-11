@@ -364,5 +364,44 @@ namespace TestKB.Controllers
                 return Json(error);
             }
         }
+        // Add this method to your ContentController class
+
+        [HttpGet]
+        [Route("GetContentByCategoryAndSubcategory")]
+        public async Task<IActionResult> GetContentByCategoryAndSubcategory(string category, string subcategory)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subcategory))
+                {
+                    return Json(new { success = false, message = "Kategori veya alt kategori boş olamaz." });
+                }
+
+                // Get current department from session
+                Department department = GetCurrentDepartment();
+
+                // Get the specific content item
+                var contentItem = await _contentService.GetByCategoryAndSubcategoryAsync(category, subcategory, department);
+
+                if (contentItem == null)
+                {
+                    return Json(new { success = false, message = "İçerik bulunamadı." });
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    content = contentItem.Content,
+                    category = contentItem.Category,
+                    subcategory = contentItem.SubCategory,
+                    department = contentItem.Department
+                });
+            }
+            catch (Exception ex)
+            {
+                var error = _errorHandlingService.HandleException(ex, "GetContentByCategoryAndSubcategory");
+                return Json(error);
+            }
+        }
     }
 }

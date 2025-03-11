@@ -226,8 +226,11 @@ const categoryManager = (function () {
             return items || [];
         }
 
-        return items.filter(function(item) {
-            return item.department === department;
+        return items.filter(function (item) {
+            // Handle both PascalCase and camelCase property names
+            const itemDepartment = item.Department !== undefined ? item.Department :
+                (item.department !== undefined ? item.department : 0);
+            return itemDepartment === department;
         });
     }
 

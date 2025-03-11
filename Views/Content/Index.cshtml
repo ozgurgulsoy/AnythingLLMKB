@@ -20,8 +20,8 @@
                             @foreach (var category in Model.AllCategories)
                             {
                                 var selectedAttr = string.Equals(category, selectedCategory, StringComparison.OrdinalIgnoreCase)
-                                    ? "selected"
-                                    : "";
+                                ? "selected"
+                                : "";
                                 @Html.Raw($"<option value='{category}' {selectedAttr}>{category}</option>")
                                 ;
                             }
@@ -37,17 +37,6 @@
         </div>
     </div>
 
-    <!-- Display current filters -->
-    <div class="row justify-content-center mb-3">
-        <div class="col-md-8">
-            <div class="alert alert-info" role="alert">
-                <strong>Aktif Filtreler:</strong>
-                Departman: @selectedDepartment,
-                Kategori: @(string.IsNullOrEmpty(selectedCategory) ? "Tümü" : selectedCategory)
-            </div>
-        </div>
-    </div>
-
     <!-- Display Content Items as Bootstrap Cards -->
     <div class="row">
         @if (Model.ContentItems != null && Model.ContentItems.Any())
@@ -60,9 +49,6 @@
                             <h5 class="card-title">@item.Category</h5>
                             <h6 class="card-subtitle mb-2 text-muted">@item.SubCategory</h6>
                             <p class="card-text">@item.Content</p>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <small class="text-muted">Departman: @item.Department</small>
                         </div>
                     </div>
                 </div>

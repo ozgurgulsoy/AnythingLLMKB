@@ -33,22 +33,38 @@ const subcategoryManager = (function () {
 
         // Get current department from window or default to 0
         const currentDepartment = window.currentDepartment || 0;
+        console.log('Current department for subcategory population:', currentDepartment);
+        console.log('Looking for subcategories for category:', category);
 
         // Seçilen kategoriye ait alt kategorileri bulur
         const subcats = new Set();
 
         if (window.allItems && Array.isArray(window.allItems)) {
+            console.log('Total items in allItems:', window.allItems.length);
+
+            // Log sample item to check structure
+            if (window.allItems.length > 0) {
+                console.log('Sample item structure:', window.allItems[0]);
+            }
+
             window.allItems.forEach(function (item) {
+                // Try both PascalCase and camelCase to be safe
+                const category_value = item.Category || item.category;
+                const subcategory_value = item.SubCategory || item.subCategory;
+                const department_value = item.Department !== undefined ? item.Department :
+                    (item.department !== undefined ? item.department : 0);
+
                 // Match both category and department
-                if (item.category &&
-                    item.category.trim().toLowerCase() === category.trim().toLowerCase() &&
-                    (currentDepartment === 0 || item.department === currentDepartment)) {
-                    subcats.add(item.subCategory ? item.subCategory.trim() : "");
+                if (category_value &&
+                    category_value.trim().toLowerCase() === category.trim().toLowerCase() &&
+                    (currentDepartment === 0 || department_value === currentDepartment)) {
+                    subcats.add(subcategory_value ? subcategory_value.trim() : "");
                 }
             });
         }
 
         // Bulunan alt kategorileri sırala ve select'e ekle
+        console.log('Found subcategories:', Array.from(subcats));
         var subcatArr = Array.from(subcats).sort();
         subcatArr.forEach(function (subcat) {
             var opt = document.createElement('option');
@@ -92,20 +108,58 @@ const subcategoryManager = (function () {
             let content = "";
             const currentDepartment = departmentSelect ? parseInt(departmentSelect.value, 10) : (window.currentDepartment || 0);
 
+            console.log('Looking for match with:', {
+                category: categorySelect.value.toLowerCase(),
+                subcategory: subCategorySelect.value.toLowerCase(),
+                department: currentDepartment
+            });
+
             if (window.allItems && Array.isArray(window.allItems)) {
+                console.log('Searching through', window.allItems.length, 'items');
+
+                // Log some items to check their structure
+                if (window.allItems.length > 0) {
+                    console.log('First few items:', window.allItems.slice(0, 3));
+                }
+
                 const matches = window.allItems.filter(function (item) {
-                    return item.category.toLowerCase() === categorySelect.value.toLowerCase() &&
-                        item.subCategory.toLowerCase() === subCategorySelect.value.toLowerCase() &&
-                        (currentDepartment === 0 || item.department === currentDepartment);
+                    // Try both PascalCase and camelCase to be safe
+                    const category_value = item.Category || item.category;
+                    const subcategory_value = item.SubCategory || item.subCategory;
+                    const department_value = item.Department !== undefined ? item.Department :
+                        (item.department !== undefined ? item.department : 0);
+
+                    const categoryMatch = category_value &&
+                        category_value.toLowerCase() === categorySelect.value.toLowerCase();
+
+                    const subcategoryMatch = subcategory_value &&
+                        subcategory_value.toLowerCase() === subCategorySelect.value.toLowerCase();
+
+                    const departmentMatch = currentDepartment === 0 || department_value === currentDepartment;
+
+                    const match = categoryMatch && subcategoryMatch && departmentMatch;
+
+                    // Log detailed info for matching items
+                    if (match) {
+                        console.log('Found matching item:', item);
+                    }
+
+                    return match;
                 });
 
+                console.log('Matches found:', matches.length);
+
                 if (matches.length > 0) {
-                    content = matches[0].content;
+                    // Try both PascalCase and camelCase
+                    content = matches[0].Content || matches[0].content || "";
+                    console.log('Content found (length):', content.length);
+                    console.log('Content preview:', content.substring(0, 100) + (content.length > 100 ? '...' : ''));
                 }
             }
 
             if (extendContentBox) {
                 extendContentBox.value = content;
+                console.log('Set content box value (length):', content.length);
             }
 
             if (contentDiv) {

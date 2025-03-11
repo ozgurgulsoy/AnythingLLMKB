@@ -38,7 +38,12 @@
     <h2 class="text-center mb-4">İçerik Düzenle</h2>
 
     <!-- Debug info (can be removed in production) -->
-    <div class="small text-muted mb-2">Son Veri Güncelleme: @refreshTime</div>
+    <div class="d-none">
+        <input type="hidden" id="debugSelectedCategory" value="@Model.ExtendContent.SelectedCategory" />
+        <input type="hidden" id="debugSelectedSubCategory" value="@Model.ExtendContent.SelectedSubCategory" />
+        <input type="hidden" id="debugContent" value="@(Model.ExtendContent.Content?.Length > 0 ? "Content exists" : "No content")" />
+        <input type="hidden" id="debugContentLength" value="@(Model.ExtendContent.Content?.Length ?? 0)" />
+    </div>
 
     <div class="card mx-auto" style="max-width: 900px;">
         <div class="card-header">
@@ -288,33 +293,99 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <!-- Add this to the Scripts section in Edit.cshtml -->
+    <!-- Add this to the Scripts section in Edit.cshtml -->
+
     <script>
-        // Force reload any stale data in edit mode
         $(document).ready(function() {
-            // Add cache busting to any AJAX calls
-            $(document).ajaxSend(function(e, xhr) {
-                xhr.setRequestHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-                xhr.setRequestHeader("Pragma", "no-cache");
-                xhr.setRequestHeader("Expires", "0");
-            });
+            // Existing code here...
 
-            // Since we're on the edit page, disable browser back-button cache
-            window.onpageshow = function(event) {
-                if (event.persisted) {
-                    window.location.reload();
+            // DIRECT CONTENT LOADING SOLUTION
+            function directLoadContent() {
+                console.log("Direct content loader triggered");
+
+                // Get current values
+                const categorySelect = document.getElementById('selectedCategory');
+                const subCategorySelect = document.getElementById('selectedSubCategory');
+
+                if (!categorySelect || !subCategorySelect ||
+                    !categorySelect.value || !subCategorySelect.value) {
+                    console.log("Missing category or subcategory selections");
+                    return;
                 }
-            };
 
-            // Add timestamp to all API calls
-            const originalFetch = window.fetch;
-            window.fetch = function() {
-                if (arguments[0].indexOf('?') > -1) {
-                    arguments[0] += '&_=' + new Date().getTime();
+                const category = categorySelect.value;
+                const subcategory = subCategorySelect.value;
+
+                console.log(`Directly loading content for ${category}/${subcategory}`);
+
+                // Loop through allItems to find a match
+                if (window.allItems && Array.isArray(window.allItems)) {
+                    console.log(`Searching through ${window.allItems.length} items`);
+
+                    // Try to find the matching item
+                    const matchingItem = window.allItems.find(item => {
+                        // Check both PascalCase and camelCase properties
+                        const itemCategory = item.Category || item.category;
+                        const itemSubcategory = item.SubCategory || item.subCategory;
+                        const itemContent = item.Content || item.content;
+
+                        const categoryMatch = itemCategory &&
+                            itemCategory.toLowerCase() === category.toLowerCase();
+                        const subcategoryMatch = itemSubcategory &&
+                            itemSubcategory.toLowerCase() === subcategory.toLowerCase();
+
+                        return categoryMatch && subcategoryMatch;
+                    });
+
+                    if (matchingItem) {
+                        console.log("Found matching item:", matchingItem);
+
+                        // Get the content field
+                        const contentField = document.getElementById('extendContent');
+                        if (contentField) {
+                            // Set the content value
+                            const content = matchingItem.Content || matchingItem.content || "";
+                            contentField.value = content;
+                            console.log(`Set content field with ${content.length} characters`);
+
+                            // Show the content area
+                            document.getElementById('contentDiv').style.display = 'block';
+                            document.getElementById('submitContentBtn').style.display = 'block';
+                        } else {
+                            console.error("Content field not found");
+                        }
+                    } else {
+                        console.log(`No item found for ${category}/${subcategory}`);
+                    }
                 } else {
-                    arguments[0] += '?_=' + new Date().getTime();
+                    console.error("allItems is not available");
                 }
-                return originalFetch.apply(this, arguments);
-            };
+            }
+
+            // Add change handler to subcategory select
+            const subCategorySelect = document.getElementById('selectedSubCategory');
+            if (subCategorySelect) {
+                console.log("Adding direct change handler to subcategory select");
+                subCategorySelect.addEventListener('change', directLoadContent);
+            }
+
+            // Handle case when page loads with a category and subcategory already selected
+            setTimeout(function() {
+                const categorySelect = document.getElementById('selectedCategory');
+                const subCategorySelect = document.getElementById('selectedSubCategory');
+
+                if (categorySelect && subCategorySelect &&
+                    categorySelect.value && subCategorySelect.value) {
+                    console.log("Initial values detected, triggering direct content loading");
+                    directLoadContent();
+                }
+            }, 1000);
+
+            // Add click handlers to select options
+            $('select#selectedSubCategory option').on('click', function() {
+                directLoadContent();
+            });
         });
     </script>
 }
