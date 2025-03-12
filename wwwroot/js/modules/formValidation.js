@@ -113,25 +113,22 @@ const formValidation = (function () {
 
         // Check for duplicate categories (using the allItems array)
         if (categoryValue && window.allItems && Array.isArray(window.allItems)) {
-            const categoryExists = window.allItems.some(function (item) {
-                return item.category && item.category.toLowerCase() === categoryValue.toLowerCase();
-            });
-
-            if (categoryExists) {
-                errorMessages.push(`"${categoryValue}" kategorisi zaten mevcut.`);
-                if (newCategory) newCategory.classList.add('is-invalid');
-                hasErrors = true;
-            }
-
-            // Check for duplicate subcategories within the same category
-            if (subCategoryValue && categoryExists) {
+            // UPDATED: Check if the specific category/subcategory combination exists regardless of department
+            if (subCategoryValue) {
                 const subcategoryExists = window.allItems.some(function (item) {
-                    return item.category && item.category.toLowerCase() === categoryValue.toLowerCase() &&
-                        item.subCategory && item.subCategory.toLowerCase() === subCategoryValue.toLowerCase();
+                    // Handle both PascalCase and camelCase property names
+                    const itemCategory = item.Category || item.category;
+                    const itemSubcategory = item.SubCategory || item.subCategory;
+
+                    return itemCategory &&
+                        itemCategory.toLowerCase() === categoryValue.toLowerCase() &&
+                        itemSubcategory &&
+                        itemSubcategory.toLowerCase() === subCategoryValue.toLowerCase();
+                    // Removed department check to ensure uniqueness across all departments
                 });
 
                 if (subcategoryExists) {
-                    errorMessages.push(`"${categoryValue}" kategorisinde "${subCategoryValue}" alt kategorisi zaten mevcut.`);
+                    errorMessages.push(`"${categoryValue}" kategorisinde "${subCategoryValue}" alt kategorisi zaten mevcut. (Tüm departmanlarda benzersiz olmalıdır)`);
                     if (newSubCategory) newSubCategory.classList.add('is-invalid');
                     hasErrors = true;
                 }

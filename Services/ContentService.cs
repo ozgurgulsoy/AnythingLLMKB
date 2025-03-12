@@ -79,42 +79,44 @@ namespace TestKB.Services
                 string.Equals(i.SubCategory?.Trim(), subcategory?.Trim(), StringComparison.OrdinalIgnoreCase) &&
                 i.Department == department);
         }
-        
+
         /// <summary>
         /// Yeni bir içerik öğesi ekler
         /// </summary>
+        // In the ContentService.cs file, modify the CreateAsync method to check for duplicates
+        // regardless of department:
+
         public async Task<ContentItem> CreateAsync(ContentItem item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
-                
+
             if (string.IsNullOrWhiteSpace(item.Category))
                 throw new ArgumentException("Kategori boş olamaz", nameof(item.Category));
-                
+
             var items = await GetAllAsync(true); // Always get fresh data
-            
-            // Check if item already exists with the same department
-            var exists = items.Any(i => 
+
+            // Updated duplicate check - removed department comparison
+            var exists = items.Any(i =>
                 string.Equals(i.Category.Trim(), item.Category.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(i.SubCategory?.Trim(), item.SubCategory?.Trim(), StringComparison.OrdinalIgnoreCase) &&
-                i.Department == item.Department);
-                
+                string.Equals(i.SubCategory?.Trim(), item.SubCategory?.Trim(), StringComparison.OrdinalIgnoreCase));
+
             if (exists)
-                throw new InvalidOperationException($"İçerik zaten mevcut: {item.Category}/{item.SubCategory} (Departman: {item.Department})");
-                
+                throw new InvalidOperationException($"Bu kategori ve alt kategori zaten mevcut: {item.Category}/{item.SubCategory}");
+
             // Add the new item
             items.Add(item);
             await _repository.SaveAsync(items);
-            
+
             // Invalidate cache
             InvalidateCache();
-            
-            _logger.LogInformation("Yeni içerik eklendi: {Category}/{SubCategory} (Departman: {Department})", 
+
+            _logger.LogInformation("Yeni içerik eklendi: {Category}/{SubCategory} (Departman: {Department})",
                 item.Category, item.SubCategory, item.Department);
-            
+
             return item;
         }
-        
+
         /// <summary>
         /// Var olan içerik öğesini günceller
         /// </summary>
