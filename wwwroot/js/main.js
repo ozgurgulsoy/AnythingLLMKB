@@ -1,10 +1,9 @@
 ﻿// wwwroot/js/main.js
-// Add these functions to your existing main.js
 
 // Expose function for deleting content
 window.deleteContentItem = function (category, subcategory, department, element) {
     // Confirm deletion
-    if (confirm(`"${category}/${subcategory}" içeriğini silmek istediğinize emin misiniz?`)) {
+    if (confirm(`"${category}/${subcategory}" içeriğini temizlemek istediğinize emin misiniz?`)) {
         // Get the anti-forgery token
         const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
@@ -27,29 +26,29 @@ window.deleteContentItem = function (category, subcategory, department, element)
             .then(data => {
                 if (data.success) {
                     // Show success message using existing notifications module
-                    notifications.show(data.message || "İçerik başarıyla silindi.", "success");
+                    notifications.show(data.message || "İçerik başarıyla temizlendi.", "success");
 
-                    // Remove the card from the UI
-                    const card = element.closest('.col-md-4');
-                    card.style.opacity = '0';
-                    setTimeout(() => {
-                        card.remove();
-                    }, 300);
+                    // IMPORTANT: Just find the p.card-text element directly and clear its text content
+                    // Don't manipulate the visibility or remove any parent elements
+                    const cardTextElement = element.closest('.card').querySelector('.card-text');
+                    if (cardTextElement) {
+                        cardTextElement.textContent = '';
+                    }
                 } else {
                     // Show error message
-                    notifications.show(data.message || "İçerik silinirken bir hata oluştu.", "danger");
+                    notifications.show(data.message || "İçerik temizlenirken bir hata oluştu.", "danger");
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                notifications.show("İçerik silinirken bir hata oluştu.", "danger");
+                notifications.show("İçerik temizlenirken bir hata oluştu.", "danger");
             });
     }
 };
 
-// Initialize content deletion - to be called during document ready
-function initializeContentDeletion() {
-    // Check if Font Awesome is loaded, add if necessary
+// Initialize content delete functionality
+function initializeContentDelete() {
+    // Add Font Awesome if not already included
     if (!document.querySelector('link[href*="font-awesome"]')) {
         const fontAwesome = document.createElement('link');
         fontAwesome.rel = 'stylesheet';
@@ -72,13 +71,9 @@ function initializeContentDeletion() {
     });
 }
 
-// Add this to your existing document ready function
-document.addEventListener('DOMContentLoaded', function () {
-    // Your existing code...
+// Remove this function if it exists to avoid duplication
+// function initializeContentDeletion() { ... }
 
-    // Add this line to initialize content deletion
-    initializeContentDeletion();
-});
 document.addEventListener('DOMContentLoaded', function () {
     // Global variable for content items
     window.allItems = allItemsJsonData || [];
@@ -133,88 +128,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Add this line to trigger content loading for the active tab
     setTimeout(triggerActiveTabContentLoading, 500);
 
-    // Initialize content delete functionality
+    // Initialize content delete functionality - only call one of these
     initializeContentDelete();
+    // Remove this line to avoid duplication:
+    // initializeContentDeletion();
 });
-
-// Initialize content delete functionality
-function initializeContentDelete() {
-    // Add Font Awesome if not already included
-    if (!document.querySelector('link[href*="font-awesome"]')) {
-        const fontAwesome = document.createElement('link');
-        fontAwesome.rel = 'stylesheet';
-        fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
-        document.head.appendChild(fontAwesome);
-    }
-
-    // Add click handler for delete icons
-    document.addEventListener('click', function (e) {
-        // Find closest delete icon if clicked on or inside it
-        const deleteIcon = e.target.closest('.content-delete-icon');
-        if (!deleteIcon) return;
-
-        e.stopPropagation();
-
-        const category = deleteIcon.dataset.category;
-        const subcategory = deleteIcon.dataset.subcategory;
-        const department = deleteIcon.dataset.department;
-
-        if (confirm(`"${category}/${subcategory}" içeriğini silmek istediğinize emin misiniz?`)) {
-            // Get the anti-forgery token
-            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-            // Create form data
-            const formData = new FormData();
-            formData.append('category', category);
-            formData.append('subcategory', subcategory);
-            formData.append('department', department);
-            formData.append('__RequestVerificationToken', token);
-
-            // Send delete request
-            fetch('/Content/DeleteContent', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Show success message
-                        if (typeof notifications !== 'undefined' && notifications.show) {
-                            notifications.show(data.message || "İçerik başarıyla silindi.", "success");
-                        } else {
-                            alert(data.message || "İçerik başarıyla silindi.");
-                        }
-
-                        // Remove the card from the UI
-                        const card = deleteIcon.closest('.col-md-4');
-                        card.style.opacity = '0';
-                        setTimeout(() => {
-                            card.remove();
-                        }, 300);
-                    } else {
-                        // Show error message
-                        if (typeof notifications !== 'undefined' && notifications.show) {
-                            notifications.show(data.message || "İçerik silinirken bir hata oluştu.", "danger");
-                        } else {
-                            alert(data.message || "İçerik silinirken bir hata oluştu.");
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    // Show generic error message
-                    if (typeof notifications !== 'undefined' && notifications.show) {
-                        notifications.show("İçerik silinirken bir hata oluştu.", "danger");
-                    } else {
-                        alert("İçerik silinirken bir hata oluştu.");
-                    }
-                });
-        }
-    });
-}
 
 // Initialize department dropdown in navbar
 function initializeDepartmentDropdown() {

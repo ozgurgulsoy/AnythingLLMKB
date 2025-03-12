@@ -413,7 +413,8 @@ namespace TestKB.Controllers
                 return Json(error);
             }
         }
-        // Add to ContentController.cs
+        // Add this new action method to your ContentController.cs
+        // Add this method to your ContentController.cs
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteContent(string category, string subcategory, int department)
@@ -429,15 +430,27 @@ namespace TestKB.Controllers
                 // Convert from int to Department enum
                 Department dept = (Department)department;
 
-                // Delete the specific content
-                await _contentService.DeleteAsync(category, subcategory, dept);
+                // Get the content item first
+                var contentItem = await _contentService.GetByCategoryAndSubcategoryAsync(category, subcategory, dept);
+
+                if (contentItem == null)
+                {
+                    return Json(_errorHandlingService.HandleValidationErrors(
+                        ["İçerik bulunamadı."]));
+                }
+
+                // Instead of deleting, just clear the content but preserve structure
+                contentItem.Content = string.Empty;
+
+                // Update the item with empty content
+                await _contentService.UpdateAsync(contentItem);
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    return Json(_errorHandlingService.CreateSuccessResponse("İçerik başarıyla silindi."));
+                    return Json(_errorHandlingService.CreateSuccessResponse("İçerik başarıyla temizlendi."));
                 }
 
-                TempData["SuccessMessage"] = "İçerik başarıyla silindi.";
+                TempData["SuccessMessage"] = "İçerik başarıyla temizlendi.";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)

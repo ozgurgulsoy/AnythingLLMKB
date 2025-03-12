@@ -164,13 +164,13 @@
   {
     "Category": "Ağ Mimarileri",
     "SubCategory": "Eşler Arası (P2P)",
-    "Content": "Eşler arası ağlarda, tüm cihazlar hem istemci hem de sunucu olarak hareket edebilir. Kaynaklar, doğrudan cihazlar arasında paylaşılır. Torrent ağları, P2P ağlarına bir örnektir.",
+    "Content": "",
     "Department": 0
   },
   {
     "Category": "Ağ Mimarileri",
     "SubCategory": "Bulut Bilişim Mimarisi",
-    "Content": "Bulut bilişim mimarisi, kaynakların (sunucular, depolama, yazılım) internet üzerinden sunulduğu bir yapıdır. Kullanıcılar, bu kaynaklara istedikleri zaman ve yerden erişebilirler.",
+    "Content": "",
     "Department": 0
   },
   {
@@ -178,5 +178,11 @@
     "SubCategory": "Bulut Bilişim",
     "Content": "Bulut bilişim, internet üzerinden sunulan bilgi işlem kaynaklarına (sunucular, depolama, yazılım) erişmeyi sağlar. Verilerin ve uygulamaların merkezi olarak yönetilmesini kolaylaştırır.",
     "Department": 3
+  },
+  {
+    "Category": "Test",
+    "SubCategory": "Test",
+    "Content": "",
+    "Department": 0
   }
 ]
