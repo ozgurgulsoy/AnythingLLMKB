@@ -8,7 +8,7 @@
   {
     "Category": "Bilgisayar Ağları",
     "SubCategory": "Ağ Topolojileri",
-    "Content": "Ağ topolojisi, ağdaki cihazların fiziksel veya mantıksal düzenlenmesidir. Yaygın topolojiler arasında yıldız, halka, otobüs ve ağaç topolojileri bulunur. test",
+    "Content": "Ağ topolojisi, ağdaki cihazların fiziksel veya mantıksal düzenlenmesidir. Yaygın topolojiler arasında yıldız, halka, otobüs ve ağaç topolojileri bulunur.",
     "Department": 0
   },
   {
@@ -18,33 +18,9 @@
     "Department": 0
   },
   {
-    "Category": "Bilgisayar Ağları",
-    "SubCategory": "Ağ Cihazları",
-    "Content": "Ağ cihazları, ağdaki veri iletimini sağlayan donanımlardır. Yönlendiriciler, anahtarlar, modemler ve ağ arayüz kartları gibi çeşitli cihazlar bulunur.",
-    "Department": 0
-  },
-  {
     "Category": "Kablosuz Ağlar",
     "SubCategory": "Wi-Fi Teknolojisi",
     "Content": "Wi-Fi, kablosuz ağlarda kullanılan bir teknolojidir. IEEE 802.11 standartlarına dayanır ve cihazların kablosuz olarak internete veya ağa bağlanmasını sağlar.",
-    "Department": 0
-  },
-  {
-    "Category": "Kablosuz Ağlar",
-    "SubCategory": "Wi-Fi Güvenliği",
-    "Content": "Wi-Fi ağlarının güvenliği önemlidir. WPA2 ve WPA3 gibi şifreleme protokolleri kullanılarak ağın yetkisiz erişime karşı korunması sağlanmalıdır.",
-    "Department": 0
-  },
-  {
-    "Category": "Kablosuz Ağlar",
-    "SubCategory": "Bluetooth Teknolojisi",
-    "Content": "Bluetooth, kısa mesafelerde kablosuz iletişim için kullanılan bir teknolojidir. Genellikle kulaklıklar, hoparlörler ve diğer cihazlar arasında bağlantı kurmak için kullanılır.",
-    "Department": 0
-  },
-  {
-    "Category": "Kablosuz Ağlar",
-    "SubCategory": "Mobil Ağlar",
-    "Content": "Mobil ağlar, cep telefonları ve diğer mobil cihazların iletişim kurmasını sağlar. 4G ve 5G gibi farklı nesil mobil ağ teknolojileri mevcuttur.",
     "Department": 0
   },
   {
@@ -54,69 +30,21 @@
     "Department": 0
   },
   {
-    "Category": "Ağ Yönetimi",
-    "SubCategory": "Ağ Optimizasyonu",
-    "Content": "Ağ optimizasyonu, ağ performansını artırmak ve verimliliği sağlamak için yapılan çalışmalar bütünüdür. Trafik yönetimi, önceliklendirme ve sıkıştırma gibi teknikler kullanılır.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Yönetimi",
-    "SubCategory": "Ağ Yedekleme",
-    "Content": "Ağ yedekleme, ağdaki verilerin ve yapılandırmaların düzenli olarak yedeklenmesidir. Veri kaybı durumunda ağın hızlı bir şekilde yeniden kurulmasını sağlar.",
-    "Department": 0
-  },
-  {
     "Category": "Ağ Uygulamaları",
     "SubCategory": "Bulut Bilişim",
     "Content": "Bulut bilişim, internet üzerinden sunulan bilgi işlem kaynaklarına (sunucular, depolama, yazılım) erişmeyi sağlar. Verilerin ve uygulamaların merkezi olarak yönetilmesini kolaylaştırır.",
     "Department": 0
   },
   {
-    "Category": "Ağ Uygulamaları",
-    "SubCategory": "Büyük Veri",
-    "Content": "Büyük veri, çok büyük ve karmaşık veri kümelerini analiz ederek anlamlı bilgiler elde etmeyi amaçlar. Ağlar, büyük veri akışını yönetmek ve işlemek için kullanılır.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Uygulamaları",
-    "SubCategory": "Video Konferans",
-    "Content": "Video konferans, internet üzerinden gerçek zamanlı olarak sesli ve görüntülü iletişim kurmayı sağlar. İş toplantıları, eğitimler ve diğer iletişim amaçları için kullanılır.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Temelleri",
-    "SubCategory": "Veri İletimi",
-    "Content": "Veri, ağlar aracılığıyla paketler halinde iletilir. Bu paketler, başlık ve yükten oluşur. Başlık, hedef adres ve diğer kontrol bilgilerini içerirken, yük, asıl veriyi içerir.",
-    "Department": 0
-  },
-  {
     "Category": "Ağ Temelleri",
     "SubCategory": "IP Adresleri",
-    "Content": "Her ağ cihazına, ağda benzersiz bir IP adresi atanır. Bu adres, cihazın ağdaki konumunu belirtir ve veri paketlerinin doğru hedefe yönlendirilmesini sağlar. IPv4 ve IPv6 olmak üzere iki ana IP adresi sürümü bulunur.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Temelleri",
-    "SubCategory": "Alan Adları",
-    "Content": "Alan adları, IP adreslerini insan tarafından okunabilir hale getiren isimlerdir. Örneğin, google.com bir alan adıdır ve belirli bir IP adresine karşılık gelir. DNS (Alan Adı Sistemi), alan adlarını IP adreslerine çevirir.",
+    "Content": "Her ağ cihazına, ağda benzersiz bir IP adresi atanır. Bu adres, cihazın ağdaki konumunu belirtir ve veri paketlerinin doğru hedefe yönlendirilmesini sağlar.",
     "Department": 0
   },
   {
     "Category": "Kablolu Ağlar",
     "SubCategory": "Ethernet",
-    "Content": "Ethernet, kablolu ağlarda en yaygın kullanılan teknolojilerden biridir. Genellikle CAT5, CAT6 veya CAT7 kabloları üzerinden veri iletimi gerçekleştirilir. Gigabit Ethernet ve 10 Gigabit Ethernet gibi farklı hız seçenekleri mevcuttur.",
-    "Department": 0
-  },
-  {
-    "Category": "Kablolu Ağlar",
-    "SubCategory": "Fiber Optik",
-    "Content": "Fiber optik kablolar, veriyi ışık sinyalleriyle iletir. Yüksek bant genişliği ve uzun mesafelerde veri iletimi için idealdir. Genellikle telekomünikasyon ve veri merkezlerinde kullanılır.",
-    "Department": 0
-  },
-  {
-    "Category": "Kablolu Ağlar",
-    "SubCategory": "Koaksiyel Kablolar",
-    "Content": "Koaksiyel kablolar, iç iletken ve dış iletken katmanlarından oluşur. Genellikle televizyon yayınları ve kablolu internet bağlantıları için kullanılır.",
+    "Content": "Ethernet, kablolu ağlarda en yaygın kullanılan teknolojilerden biridir. Genellikle CAT5, CAT6 veya CAT7 kabloları üzerinden veri iletimi gerçekleştirilir.",
     "Department": 0
   },
   {
@@ -126,69 +54,107 @@
     "Department": 0
   },
   {
-    "Category": "Kablosuz İletişim",
-    "SubCategory": "Antenler",
-    "Content": "Antenler, radyo sinyallerini yaymak ve almak için kullanılır. Anten türü, kapsama alanı ve sinyal gücünü etkiler. Yönlü ve çok yönlü antenler gibi farklı tipler bulunur.",
-    "Department": 0
-  },
-  {
-    "Category": "Kablosuz İletişim",
-    "SubCategory": "Modülasyon",
-    "Content": "Modülasyon, verinin radyo sinyallerine kodlanması işlemidir. Farklı modülasyon teknikleri, veri hızını ve sinyal kalitesini etkiler.",
-    "Department": 0
-  },
-  {
-    "Category": "Ağ Performansı",
-    "SubCategory": "Gecikme (Latency)",
-    "Content": "Gecikme, verinin bir noktadan diğerine ulaşması için geçen süredir. Düşük gecikme, gerçek zamanlı uygulamalar (örneğin video konferans) için önemlidir.",
-    "Department": 0
-  },
-  {
     "Category": "Ağ Performansı",
     "SubCategory": "Bant Genişliği",
-    "Content": "Bant genişliği, bir ağ bağlantısının belirli bir sürede iletebileceği veri miktarıdır. Yüksek bant genişliği, büyük dosyaların hızlı bir şekilde indirilmesi veya yüklenmesi için gereklidir.",
+    "Content": "Bant genişliği, bir ağ bağlantısının belirli bir sürede iletebileceği veri miktarıdır. Yüksek bant genişliği, büyük dosyaların hızlı bir şekilde indirilmesi için gereklidir.",
+    "Department": 0
+  },
+
+  {
+    "Category": "Siber Güvenlik",
+    "SubCategory": "Saldırı Türleri",
+    "Content": "Siber saldırılar arasında DDoS, kimlik avı, kötü amaçlı yazılım ve sosyal mühendislik saldırıları yer alır.",
     "Department": 0
   },
   {
-    "Category": "Ağ Performansı",
-    "SubCategory": "Kayıp Paket",
-    "Content": "Kayıp paket, veri iletimi sırasında kaybolan paketlerdir. Kayıp paketler, ağ performansını olumsuz etkileyebilir ve veri tekrarı gerektirebilir.",
+    "Category": "Siber Güvenlik",
+    "SubCategory": "Güvenlik Duvarları",
+    "Content": "Güvenlik duvarları, gelen ve giden ağ trafiğini denetleyerek yetkisiz erişimi engeller.",
     "Department": 0
   },
   {
-    "Category": "Ağ Mimarileri",
-    "SubCategory": "İstemci-Sunucu",
-    "Content": "İstemci-sunucu modelinde, istemciler (örneğin bilgisayarlar) sunuculardan (örneğin web sunucuları) hizmet talep eder. Sunucular, isteklere yanıt verir ve gerekli verileri veya kaynakları sağlar.",
+    "Category": "Siber Güvenlik",
+    "SubCategory": "Şifreleme Algoritmaları",
+    "Content": "AES, RSA ve SHA gibi şifreleme algoritmaları, veri güvenliği sağlamak için kullanılır.",
     "Department": 0
   },
   {
-    "Category": "Ağ Mimarileri",
-    "SubCategory": "Eşler Arası (P2P)",
-    "Content": "",
+    "Category": "Veri Tabanı Yönetimi",
+    "SubCategory": "SQL ve NoSQL",
+    "Content": "SQL veritabanları ilişkisel model kullanırken, NoSQL esnek ve ölçeklenebilir veri saklama çözümleri sunar.",
     "Department": 0
   },
   {
-    "Category": "Ağ Mimarileri",
-    "SubCategory": "Bulut Bilişim Mimarisi",
-    "Content": "",
+    "Category": "Veri Tabanı Yönetimi",
+    "SubCategory": "Veri Yedekleme",
+    "Content": "Veri kaybını önlemek için yedekleme stratejileri belirlenmeli ve düzenli olarak yedekleme yapılmalıdır.",
     "Department": 0
   },
   {
-    "Category": "Ağ Uygulamaları",
-    "SubCategory": "Bulut Bilişim",
-    "Content": "Bulut bilişim, internet üzerinden sunulan bilgi işlem kaynaklarına (sunucular, depolama, yazılım) erişmeyi sağlar. Verilerin ve uygulamaların merkezi olarak yönetilmesini kolaylaştırır.",
-    "Department": 3
-  },
-  {
-    "Category": "Test",
-    "SubCategory": "Test",
-    "Content": "",
+    "Category": "Bulut Bilişim",
+    "SubCategory": "IaaS, PaaS ve SaaS",
+    "Content": "Bulut bilişim, altyapı, platform ve yazılım hizmetleri olarak üç ana modele ayrılır.",
     "Department": 0
   },
   {
-    "Category": "Test",
-    "SubCategory": "Test",
-    "Content": "Test",
-    "Department": 1
+    "Category": "Bulut Bilişim",
+    "SubCategory": "Sunucusuz Bilişim",
+    "Content": "Sunucusuz bilişim, geliştiricilerin sunucu yönetmeden kod çalıştırmasını sağlayan bir modeldir.",
+    "Department": 0
+  },
+  {
+    "Category": "Yapay Zeka ve Makine Öğrenimi",
+    "SubCategory": "Denetimli Öğrenme",
+    "Content": "Denetimli öğrenme, etiketli veriler kullanılarak modelin eğitildiği bir makine öğrenme türüdür.",
+    "Department": 0
+  },
+  {
+    "Category": "Yapay Zeka ve Makine Öğrenimi",
+    "SubCategory": "Denetimsiz Öğrenme",
+    "Content": "Denetimsiz öğrenme, veri içindeki kalıpları keşfetmek için etiketlenmemiş veriler kullanır.",
+    "Department": 0
+  },
+  {
+    "Category": "Yapay Zeka ve Makine Öğrenimi",
+    "SubCategory": "Doğal Dil İşleme",
+    "Content": "Doğal dil işleme (NLP), bilgisayarların insan dilini anlamasını ve işlemesini sağlayan bir AI dalıdır.",
+    "Department": 0
+  },
+  {
+    "Category": "Sistem Yönetimi",
+    "SubCategory": "Sunucu Sanallaştırma",
+    "Content": "Sanallaştırma, fiziksel kaynakları bölerek daha verimli kullanım sağlar. Örneğin, VMware ve Hyper-V.",
+    "Department": 0
+  },
+  {
+    "Category": "Sistem Yönetimi",
+    "SubCategory": "İşletim Sistemleri",
+    "Content": "Windows, Linux ve macOS gibi işletim sistemleri, donanımı yönetmek ve kullanıcı arayüzü sağlamak için kullanılır.",
+    "Department": 0
+  },
+  {
+    "Category": "Sistem Yönetimi",
+    "SubCategory": "Yedekleme ve Kurtarma",
+    "Content": "Sistem çökmesi veya veri kaybı durumunda yedekleme çözümleri kritik önem taşır.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Güvenliği",
+    "SubCategory": "VPN Teknolojileri",
+    "Content": "VPN, internet üzerinden güvenli bağlantılar oluşturmak için kullanılır.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Güvenliği",
+    "SubCategory": "İki Faktörlü Kimlik Doğrulama",
+    "Content": "İki faktörlü kimlik doğrulama, hesap güvenliğini artırmak için ek bir doğrulama katmanı ekler.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Güvenliği",
+    "SubCategory": "Saldırı Tespit Sistemleri (IDS)",
+    "Content": "Saldırı tespit sistemleri, şüpheli ağ aktivitelerini izleyerek güvenlik ihlallerini tespit eder.",
+    "Department": 0
   }
+
 ]

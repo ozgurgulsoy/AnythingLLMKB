@@ -5,6 +5,7 @@ using TestKB.Models.ViewModels;
 using TestKB.Services.Interfaces;
 using TestKB.Extensions;
 using MSSession = Microsoft.AspNetCore.Http.SessionExtensions;
+using System.Text;
 namespace TestKB.Controllers
 {
     public class ContentController : Controller
@@ -326,7 +327,6 @@ namespace TestKB.Controllers
             }
         }
 
-        // Modify your ConvertedContent method in ContentController.cs
         [HttpGet]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public async Task<IActionResult> ConvertedContent()
@@ -336,22 +336,24 @@ namespace TestKB.Controllers
                 var jsonFilePath = Path.Combine(_env.WebRootPath, "data.json");
                 if (!System.IO.File.Exists(jsonFilePath))
                 {
-                    return Content("JSON dosyası bulunamadı.", "text/plain");
+                    return Content("JSON dosyası bulunamadı.", "text/plain", Encoding.UTF8);
                 }
 
-                var jsonContent = await System.IO.File.ReadAllTextAsync(jsonFilePath);
+                // Explicitly read with UTF-8 encoding
+                var jsonContent = await System.IO.File.ReadAllTextAsync(jsonFilePath, Encoding.UTF8);
                 var plainText = Services.JsonToTextConverter.ConvertJsonToText(jsonContent);
 
-                // Return plain text response for easier processing by AnythingLLM
-                return Content(plainText, "text/plain");
+                // Return with explicit UTF-8 encoding
+                return Content(plainText, "text/plain; charset=utf-8", Encoding.UTF8);
             }
             catch (Exception ex)
             {
                 var error = _errorHandlingService.HandleException(ex, "Converting content");
-                return Content("İçerik dönüştürülürken bir hata oluştu: " + error.Message, "text/plain");
+                return Content("İçerik dönüştürülürken bir hata oluştu: " + error.Message,
+                              "text/plain; charset=utf-8", Encoding.UTF8);
             }
         }
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCategory([FromBody] DeleteCategoryViewModel model)
