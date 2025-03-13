@@ -59,7 +59,6 @@
     "Content": "Bant genişliği, bir ağ bağlantısının belirli bir sürede iletebileceği veri miktarıdır. Yüksek bant genişliği, büyük dosyaların hızlı bir şekilde indirilmesi için gereklidir.",
     "Department": 0
   },
-
   {
     "Category": "Siber Güvenlik",
     "SubCategory": "Saldırı Türleri",
@@ -103,24 +102,6 @@
     "Department": 0
   },
   {
-    "Category": "Yapay Zeka ve Makine Öğrenimi",
-    "SubCategory": "Denetimli Öğrenme",
-    "Content": "Denetimli öğrenme, etiketli veriler kullanılarak modelin eğitildiği bir makine öğrenme türüdür.",
-    "Department": 0
-  },
-  {
-    "Category": "Yapay Zeka ve Makine Öğrenimi",
-    "SubCategory": "Denetimsiz Öğrenme",
-    "Content": "Denetimsiz öğrenme, veri içindeki kalıpları keşfetmek için etiketlenmemiş veriler kullanır.",
-    "Department": 0
-  },
-  {
-    "Category": "Yapay Zeka ve Makine Öğrenimi",
-    "SubCategory": "Doğal Dil İşleme",
-    "Content": "Doğal dil işleme (NLP), bilgisayarların insan dilini anlamasını ve işlemesini sağlayan bir AI dalıdır.",
-    "Department": 0
-  },
-  {
     "Category": "Sistem Yönetimi",
     "SubCategory": "Sunucu Sanallaştırma",
     "Content": "Sanallaştırma, fiziksel kaynakları bölerek daha verimli kullanım sağlar. Örneğin, VMware ve Hyper-V.",
@@ -153,8 +134,7 @@
   {
     "Category": "Ağ Güvenliği",
     "SubCategory": "Saldırı Tespit Sistemleri (IDS)",
-    "Content": "Saldırı tespit sistemleri, şüpheli ağ aktivitelerini izleyerek güvenlik ihlallerini tespit eder.",
+    "Content": "",
     "Department": 0
   }
-
 ]

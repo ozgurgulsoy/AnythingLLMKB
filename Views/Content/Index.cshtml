@@ -97,8 +97,8 @@
                             <div class="content-delete-icon"
                                  data-category="@item.Category"
                                  data-subcategory="@item.SubCategory"
-                                 data-department="@item.Department"
-                                 onclick="clearContent('@item.Category', '@item.SubCategory', @((int)item.Department), this)">
+                                 data-department="@((int)item.Department)"
+                                 data-action="delete-content">
                                 <i class="fa fa-trash text-danger"></i>
                             </div>
                         </div>
@@ -116,61 +116,75 @@
         }
     </div>
 </div>
+@Html.AntiForgeryToken()
+
 <script>
-    function clearContent(category, subcategory, department, element) {
-        // Confirm deletion
-        if (confirm(`"${category}/${subcategory}" içeriğini temizlemek istediğinize emin misiniz?`)) {
-            // Get the anti-forgery token
-            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find all delete icons
+        document.querySelectorAll('.content-delete-icon').forEach(function(icon) {
+            icon.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
 
-            // Create form data
-            const formData = new FormData();
-            formData.append('category', category);
-            formData.append('subcategory', subcategory);
-            formData.append('department', department);
-            formData.append('__RequestVerificationToken', token);
+                const category = this.getAttribute('data-category');
+                const subcategory = this.getAttribute('data-subcategory');
+                const department = this.getAttribute('data-department');
 
-            // Send AJAX request
-            fetch('/Content/DeleteContent', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    if (typeof notifications !== 'undefined' && notifications.show) {
-                        notifications.show(data.message || "İçerik başarıyla temizlendi.", "success");
-                    } else {
-                        alert(data.message || "İçerik başarıyla temizlendi.");
-                    }
+                // Confirm deletion
+                if (confirm(`"${category}/${subcategory}" içeriğini temizlemek istediğinize emin misiniz?`)) {
+                    // Get the anti-forgery token
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-                    // Clear the content text
-                    const cardTextElement = element.closest('.card').querySelector('.card-text');
-                    if (cardTextElement) {
-                        cardTextElement.textContent = '';
-                    }
-                } else {
-                    // Show error message
-                    if (typeof notifications !== 'undefined' && notifications.show) {
-                        notifications.show(data.message || "İçerik temizlenirken bir hata oluştu.", "danger");
-                    } else {
-                        alert(data.message || "İçerik temizlenirken bir hata oluştu.");
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Show generic error message
-                if (typeof notifications !== 'undefined' && notifications.show) {
-                    notifications.show("İçerik temizlenirken bir hata oluştu.", "danger");
-                } else {
-                    alert("İçerik temizlenirken bir hata oluştu.");
+                    // Create form data
+                    const formData = new FormData();
+                    formData.append('category', category);
+                    formData.append('subcategory', subcategory);
+                    formData.append('department', department);
+                    formData.append('__RequestVerificationToken', token);
+
+                    // Send AJAX request
+                    fetch('/Content/DeleteContent', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            if (typeof notifications !== 'undefined' && notifications.show) {
+                                notifications.show(data.message || "İçerik başarıyla temizlendi.", "success");
+                            } else {
+                                alert(data.message || "İçerik başarıyla temizlendi.");
+                            }
+
+                            // Clear the content text
+                            const cardTextElement = this.closest('.card').querySelector('.card-text');
+                            if (cardTextElement) {
+                                cardTextElement.textContent = '';
+                            }
+                        } else {
+                            // Show error message
+                            if (typeof notifications !== 'undefined' && notifications.show) {
+                                notifications.show(data.message || "İçerik temizlenirken bir hata oluştu.", "danger");
+                            } else {
+                                alert(data.message || "İçerik temizlenirken bir hata oluştu.");
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Show generic error message
+                        if (typeof notifications !== 'undefined' && notifications.show) {
+                            notifications.show("İçerik temizlenirken bir hata oluştu.", "danger");
+                        } else {
+                            alert("İçerik temizlenirken bir hata oluştu.");
+                        }
+                    });
                 }
             });
-        }
-    }
+        });
+    });
 </script>

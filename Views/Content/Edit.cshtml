@@ -96,8 +96,14 @@
                                 @foreach (var dept in Enum.GetValues(typeof(Department)))
                                 {
                                     var isSelected = (Department)dept == currentDepartment;
-                                    @if (isSelected) { <option value="@dept" selected>@dept</option> }
-                                    else { <option value="@dept">@dept</option> }
+                                    @if (isSelected)
+                                    {
+                                        <option value="@dept" selected>@dept</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@dept">@dept</option>
+                                    }
                                 }
                             </select>
                         </div>
@@ -118,20 +124,20 @@
                             <label for="selectedCategory" class="font-weight-bold">Mevcut Kategori Seç</label>
                             <div class="input-group">
                                 <select asp-for="ExtendContent.SelectedCategory" class="form-control"
-                                        id="selectedCategory" onchange="onCategoryChange()">
+                                        id="selectedCategory" data-action="category-change">
                                     <option value="">Kategori seçiniz</option>
                                     @if (Model.ExistingCategories != null)
                                     {
                                         foreach (var cat in Model.ExistingCategories)
                                         {
                                             var isSelected = cat.Equals(Model.ExtendContent.SelectedCategory ?? "",
-                                                StringComparison.OrdinalIgnoreCase);
+                                            StringComparison.OrdinalIgnoreCase);
                                             <option value="@cat" selected="@(isSelected ? "selected" : null)">@cat</option>
                                         }
                                     }
                                 </select>
                                 <div class="input-group-append">
-                                    <button type="button" id="editCategoryBtn" onclick="toggleEditCategory()"
+                                    <button type="button" id="editCategoryBtn" data-action="toggle-edit-category"
                                             style="display:none; padding:0; border:none; background:none; outline:none;"
                                             title="Kategoriyi Düzenle">
                                         <img src="https://cdn2.iconfinder.com/data/icons/gentle-edges-icon-set/128/Iconfinder_0045_1.png"
@@ -148,7 +154,7 @@
                                        name="ExtendContent.EditedCategory"
                                        placeholder="Yeni kategori ismi giriniz" />
                                 <div class="input-group-append">
-                                    <button type="button" class="btn btn-primary" onclick="saveEditedCategory()">
+                                    <button type="button" class="btn btn-primary" data-action="save-edited-category">
                                         Kaydet
                                     </button>
                                 </div>
@@ -161,18 +167,18 @@
                                 <label for="selectedSubCategory" class="font-weight-bold">Mevcut Alt Kategori Seç</label>
                                 <div class="input-group">
                                     <select asp-for="ExtendContent.SelectedSubCategory" class="form-control"
-                                            id="selectedSubCategory" onchange="onSubCategoryChange()">
+                                            id="selectedSubCategory" data-action="subcategory-change">
                                         <option value="">Alt kategori seçiniz</option>
                                     </select>
                                     <div class="input-group-append">
-                                        <button type="button" id="editSubCategoryBtn" onclick="toggleEditSubCategory()"
+                                        <button type="button" id="editSubCategoryBtn" data-action="toggle-edit-subcategory"
                                                 style="display:none; padding:0; border:none; background:none; outline:none;"
                                                 title="Alt Kategoriyi Düzenle">
                                             <img src="https://cdn2.iconfinder.com/data/icons/gentle-edges-icon-set/128/Iconfinder_0045_1.png"
                                                  alt="Edit"
                                                  style="width:30px; height:30px; margin-left:10px;" />
                                         </button>
-                                        <button type="button" id="addSubCategoryBtn" onclick="toggleAddSubCategory()"
+                                        <button type="button" id="addSubCategoryBtn" data-action="toggle-add-subcategory"
                                                 style="display:inline; padding:0; border:none; background:none; outline:none;"
                                                 title="Yeni Alt Kategori Ekle">
                                             <img src="https://cdn2.iconfinder.com/data/icons/deus/24/square-plus-512.png"
@@ -193,7 +199,7 @@
                                            name="ExtendContent.EditedSubCategory"
                                            placeholder="Yeni alt kategori ismi giriniz" />
                                     <div class="input-group-append">
-                                        <button type="button" class="btn btn-primary" onclick="saveEditedSubCategory()">
+                                        <button type="button" class="btn btn-primary" data-action="save-edited-subcategory">
                                             Kaydet
                                         </button>
                                     </div>
@@ -207,7 +213,7 @@
                                            name="ExtendContent.NewSubCategory"
                                            placeholder="Yeni alt kategori ismi giriniz" />
                                     <div class="input-group-append">
-                                        <button type="button" class="btn btn-success" onclick="saveNewSubCategory()">
+                                        <button type="button" class="btn btn-success" data-action="save-new-subcategory">
                                             Ekle
                                         </button>
                                     </div>
@@ -267,7 +273,7 @@
                                 </select>
                             </div>
                             <button type="button" class="btn btn-light border-danger text-danger"
-                                    onclick="confirmDeleteCategory()">
+                                    data-action="confirm-delete-category">
                                 <i class="fa fa-trash mr-1"></i> Kategori Sil
                             </button>
                         </form>
@@ -275,10 +281,10 @@
                             <span class="text-danger font-weight-bold">
                                 Bu kategoriyi silmek istediğinize emin misiniz?&nbsp;
                             </span>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteCategory()">
+                            <button type="button" class="btn btn-sm btn-danger" data-action="delete-category">
                                 Evet
                             </button>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelDelete()">
+                            <button type="button" class="btn btn-sm btn-secondary" data-action="cancel-delete">
                                 Hayır
                             </button>
                         </div>
@@ -293,99 +299,8 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <!-- Add this to the Scripts section in Edit.cshtml -->
-    <!-- Add this to the Scripts section in Edit.cshtml -->
-
-    <script>
-        $(document).ready(function() {
-            // Existing code here...
-
-            // DIRECT CONTENT LOADING SOLUTION
-            function directLoadContent() {
-                console.log("Direct content loader triggered");
-
-                // Get current values
-                const categorySelect = document.getElementById('selectedCategory');
-                const subCategorySelect = document.getElementById('selectedSubCategory');
-
-                if (!categorySelect || !subCategorySelect ||
-                    !categorySelect.value || !subCategorySelect.value) {
-                    console.log("Missing category or subcategory selections");
-                    return;
-                }
-
-                const category = categorySelect.value;
-                const subcategory = subCategorySelect.value;
-
-                console.log(`Directly loading content for ${category}/${subcategory}`);
-
-                // Loop through allItems to find a match
-                if (window.allItems && Array.isArray(window.allItems)) {
-                    console.log(`Searching through ${window.allItems.length} items`);
-
-                    // Try to find the matching item
-                    const matchingItem = window.allItems.find(item => {
-                        // Check both PascalCase and camelCase properties
-                        const itemCategory = item.Category || item.category;
-                        const itemSubcategory = item.SubCategory || item.subCategory;
-                        const itemContent = item.Content || item.content;
-
-                        const categoryMatch = itemCategory &&
-                            itemCategory.toLowerCase() === category.toLowerCase();
-                        const subcategoryMatch = itemSubcategory &&
-                            itemSubcategory.toLowerCase() === subcategory.toLowerCase();
-
-                        return categoryMatch && subcategoryMatch;
-                    });
-
-                    if (matchingItem) {
-                        console.log("Found matching item:", matchingItem);
-
-                        // Get the content field
-                        const contentField = document.getElementById('extendContent');
-                        if (contentField) {
-                            // Set the content value
-                            const content = matchingItem.Content || matchingItem.content || "";
-                            contentField.value = content;
-                            console.log(`Set content field with ${content.length} characters`);
-
-                            // Show the content area
-                            document.getElementById('contentDiv').style.display = 'block';
-                            document.getElementById('submitContentBtn').style.display = 'block';
-                        } else {
-                            console.error("Content field not found");
-                        }
-                    } else {
-                        console.log(`No item found for ${category}/${subcategory}`);
-                    }
-                } else {
-                    console.error("allItems is not available");
-                }
-            }
-
-            // Add change handler to subcategory select
-            const subCategorySelect = document.getElementById('selectedSubCategory');
-            if (subCategorySelect) {
-                console.log("Adding direct change handler to subcategory select");
-                subCategorySelect.addEventListener('change', directLoadContent);
-            }
-
-            // Handle case when page loads with a category and subcategory already selected
-            setTimeout(function() {
-                const categorySelect = document.getElementById('selectedCategory');
-                const subCategorySelect = document.getElementById('selectedSubCategory');
-
-                if (categorySelect && subCategorySelect &&
-                    categorySelect.value && subCategorySelect.value) {
-                    console.log("Initial values detected, triggering direct content loading");
-                    directLoadContent();
-                }
-            }, 1000);
-
-            // Add click handlers to select options
-            $('select#selectedSubCategory option').on('click', function() {
-                directLoadContent();
-            });
-        });
-    </script>
+        <script>
+            // This script section can be left empty since all logic is now in main.js
+            // The content loading is handled by the directLoadContent function in main.js
+        </script>
 }
