@@ -75,8 +75,8 @@ function directLoadContent() {
         // Log first few items to debug
         if (window.allItems.length > 0) {
             console.log("Sample items:", window.allItems.slice(0, 3).map(item => ({
-                cat: item.Category || item.category,
-                subcat: item.SubCategory || item.subCategory,
+                cat: item.Category || item.category || "",
+                subcat: item.SubCategory || item.subCategory || "",
                 dept: item.Department !== undefined ? item.Department : (item.department !== undefined ? item.department : 0)
             })));
         }

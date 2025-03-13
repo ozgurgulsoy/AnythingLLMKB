@@ -122,16 +122,22 @@ const subcategoryManager = (function () {
                     console.log('First few items:', window.allItems.slice(0, 3));
                 }
 
+                // Fixed: Add null/undefined checks for all properties
                 const matches = window.allItems.filter(function (item) {
-                    return item.category.toLowerCase() === categorySelect.value.toLowerCase() &&
-                        item.subCategory.toLowerCase() === subCategorySelect.value.toLowerCase() &&
-                        (currentDepartment === 0 || item.department === currentDepartment);
+                    const itemCategory = (item.Category || item.category || "").toLowerCase();
+                    const itemSubCategory = (item.SubCategory || item.subCategory || "").toLowerCase();
+                    const itemDepartment = item.Department !== undefined ? item.Department :
+                        (item.department !== undefined ? item.department : 0);
+
+                    return itemCategory === categorySelect.value.toLowerCase() &&
+                        itemSubCategory === subCategorySelect.value.toLowerCase() &&
+                        (currentDepartment === 0 || itemDepartment === currentDepartment);
                 });
 
                 console.log('Matches found:', matches.length);
 
                 if (matches.length > 0) {
-                    content = matches[0].content;
+                    content = matches[0].Content || matches[0].content || "";
                 }
             }
 

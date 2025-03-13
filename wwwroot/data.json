@@ -56,7 +56,7 @@
   {
     "Category": "Ağ Performansı",
     "SubCategory": "Bant Genişliği",
-    "Content": "Bant genişliği, bir ağ bağlantısının belirli bir sürede iletebileceği veri miktarıdır. Yüksek bant genişliği, büyük dosyaların hızlı bir şekilde indirilmesi için gereklidir.",
+    "Content": "Bant genişliği, bir ağ bağlantısının belirli bir sürede iletebileceği veri miktarıdır. Yüksek bant genişliği, büyük dosyaların hızlı bir şekilde indirilmesi için s",
     "Department": 0
   },
   {
@@ -135,6 +135,12 @@
     "Category": "Ağ Güvenliği",
     "SubCategory": "Saldırı Tespit Sistemleri (IDS)",
     "Content": "",
+    "Department": 0
+  },
+  {
+    "Category": "Test",
+    "SubCategory": "Test",
+    "Content": "test",
     "Department": 0
   }
 ]
