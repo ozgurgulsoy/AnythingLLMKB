@@ -64,6 +64,9 @@
     </div>
 
     <!-- Core libraries first -->
+    @* In Views/Shared/_Layout.cshtml, update the script loading section *@
+
+    <!-- Core libraries first -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -71,18 +74,48 @@
     <!-- Modular JavaScript in dependency order -->
     @if (Environment.IsDevelopment())
     {
-        <!-- Individual scripts for development -->
-        <script src="~/js/modules/notifications.js"></script>
-        <script src="~/js/modules/api.js"></script>
-        <script src="~/js/modules/categoryManager.js"></script>
-        <script src="~/js/modules/subcategoryManager.js"></script>
-        <script src="~/js/modules/formValidation.js"></script>
-        <script src="~/js/main.js"></script>
+            <!-- Individual scripts for development -->
+            <script src="~/js/modules/notifications.js" asp-append-version="true"></script>
+            <script src="~/js/modules/api.js" asp-append-version="true"></script>
+            <script src="~/js/modules/categoryManager.js" asp-append-version="true"></script>
+            <script src="~/js/modules/subcategoryManager.js" asp-append-version="true"></script>
+            <script src="~/js/modules/formValidation.js" asp-append-version="true"></script>
+            <script src="~/js/main.js" asp-append-version="true"></script>
     }
     else
     {
-        <!-- Bundled scripts for production -->
-            <script src="~/js/site.min.js" asp-append-version="true"></script>
+            <!-- Fallback mechanism - try bundled first, then individual if missing -->
+            <script src="~/js/site.min.js" asp-append-version="true" 
+                    onerror="loadIndividualScripts()"></script>
+
+            <script>
+                function loadIndividualScripts() {
+                    console.log('Bundled script not found, loading individual scripts...');
+
+                    // Helper to load scripts in sequence
+                    function loadScript(src, callback) {
+                        var script = document.createElement('script');
+                        script.src = src + '?v=' + new Date().getTime();
+                        script.onload = callback;
+                        document.body.appendChild(script);
+                    }
+
+                    // Load scripts in the correct order with dependency chain
+                    loadScript('/js/modules/notifications.js', function() {
+                        loadScript('/js/modules/api.js', function() {
+                            loadScript('/js/modules/categoryManager.js', function() {
+                                loadScript('/js/modules/subcategoryManager.js', function() {
+                                    loadScript('/js/modules/formValidation.js', function() {
+                                        loadScript('/js/main.js', function() {
+                                            console.log('All scripts loaded successfully');
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                }
+            </script>
     }
 
     @RenderSection("Scripts", required: false)

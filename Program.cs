@@ -66,11 +66,72 @@ if (builder.Environment.IsDevelopment())
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+// In Program.cs, add this before app.Run()
+
+// Add bundling services
 if (!app.Environment.IsDevelopment())
 {
-    // Use custom global exception handler in production
-    app.UseGlobalExceptionHandler();
-    app.UseHsts();
+    // This will execute bundling based on the bundleconfig.json
+    app.Use(async (context, next) =>
+    {
+        // Check if the request is for a bundled file and it doesn't exist yet
+        string requestPath = context.Request.Path.Value?.ToLowerInvariant() ?? "";
+        if (requestPath.EndsWith(".min.js") || requestPath.EndsWith(".min.css"))
+        {
+            string filePath = Path.Combine(app.Environment.WebRootPath, requestPath.TrimStart('/'));
+            if (!File.Exists(filePath))
+            {
+                // Generate the bundle on first request
+                string bundlePath = Path.Combine(app.Environment.ContentRootPath, "bundleconfig.json");
+                if (File.Exists(bundlePath))
+                {
+                    try
+                    {
+                        var result = ExecuteBundling(bundlePath);
+                        if (!result)
+                        {
+                            // Log bundling failure
+                            app.Logger.LogError("Failed to generate bundles from {BundlePath}", bundlePath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        app.Logger.LogError(ex, "Error generating bundles");
+                    }
+                }
+            }
+        }
+        await next();
+    });
+}
+
+// Add this helper method to Program.cs
+bool ExecuteBundling(string bundleConfigPath)
+{
+    try
+    {
+        // Execute bundleconfig.json via dotnet command
+        var process = new System.Diagnostics.Process
+        {
+            StartInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"bundle {bundleConfigPath}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+        process.WaitForExit();
+        return process.ExitCode == 0;
+    }
+    catch
+    {
+        return false;
+    }
 }
 else
 {
@@ -96,7 +157,7 @@ app.Use(async (context, next) =>
         context.Response.Headers.Append("Pragma", "no-cache");
         context.Response.Headers.Append("Expires", "0");
     }
-    
+
     await next();
 });
 app.UseCors("AllowPythonScript");
