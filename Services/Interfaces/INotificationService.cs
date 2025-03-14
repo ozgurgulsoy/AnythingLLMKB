@@ -12,5 +12,12 @@ namespace TestKB.Services.Interfaces
         /// </summary>
         /// <returns>Bildirim başarıyla gönderildiyse true, aksi halde false</returns>
         Task<bool> NotifyContentChangeAsync();
+        // Add this to your INotificationService.cs file
+
+        /// <summary>
+        /// Python servisinin çalışıp çalışmadığını kontrol eder.
+        /// </summary>
+        /// <returns>Servis çalışıyorsa true, aksi halde false</returns>
+        Task<bool> CheckServiceAvailabilityAsync() => Task.FromResult(false);
     }
 }
