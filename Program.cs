@@ -101,5 +101,22 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Content}/{action=DepartmentSelect}/{id?}");
+// Add this right before app.Run() in Program.cs
 
+// Ensure App_Data directory exists
+var dataDirectory = Path.Combine(app.Environment.ContentRootPath, "App_Data");
+if (!Directory.Exists(dataDirectory))
+{
+    try
+    {
+        Directory.CreateDirectory(dataDirectory);
+        app.Logger.LogInformation("Created App_Data directory: {Directory}", dataDirectory);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Failed to create App_Data directory: {Directory}", dataDirectory);
+    }
+}
+
+app.Run();
 app.Run();

@@ -1,0 +1,152 @@
+﻿[
+  {
+    "Category": "Bilgisayar Ağları",
+    "SubCategory": "Temel Kavramlar",
+    "Content": "Bilgisayar ağları, bilgi ve kaynak paylaşımı için birbirine bağlı bilgisayar sistemlerinden oluşur. Ağlar, veri iletişimi ve cihazlar arası etkileşimi mümkün kılar.",
+    "Department": 0
+  },
+  {
+    "Category": "Bilgisayar Ağları",
+    "SubCategory": "Ağ Topolojileri",
+    "Content": "Ağ topolojisi, ağdaki cihazların fiziksel veya mantıksal düzenlenmesidir. Yaygın topolojiler arasında yıldız, halka, otobüs ve ağaç topolojileri bulunur.",
+    "Department": 0
+  },
+  {
+    "Category": "Bilgisayar Ağları",
+    "SubCategory": "Ağ Protokolleri",
+    "Content": "Ağ protokolleri, veri iletişimi için kullanılan kurallar ve standartlardır. TCP/IP, UDP, HTTP ve FTP gibi birçok farklı protokol mevcuttur.",
+    "Department": 0
+  },
+  {
+    "Category": "Kablosuz Ağlar",
+    "SubCategory": "Wi-Fi Teknolojisi",
+    "Content": "Wi-Fi, kablosuz ağlarda kullanılan bir teknolojidir. IEEE 802.11 standartlarına dayanır ve cihazların kablosuz olarak internete veya ağa bağlanmasını sağlar.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Yönetimi",
+    "SubCategory": "Ağ İzleme",
+    "Content": "Ağ izleme, ağ performansını ve sorunları tespit etmek için kullanılan bir süreçtir. Ağ trafiği, cihaz durumu ve bağlantı kalitesi gibi veriler izlenir.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Uygulamaları",
+    "SubCategory": "Bulut Bilişim",
+    "Content": "Bulut bilişim, internet üzerinden sunulan bilgi işlem kaynaklarına (sunucular, depolama, yazılım) erişmeyi sağlar. Verilerin ve uygulamaların merkezi olarak yönetilmesini kolaylaştırır.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Temelleri",
+    "SubCategory": "IP Adresleri",
+    "Content": "Her ağ cihazına, ağda benzersiz bir IP adresi atanır. Bu adres, cihazın ağdaki konumunu belirtir ve veri paketlerinin doğru hedefe yönlendirilmesini sağlar.",
+    "Department": 0
+  },
+  {
+    "Category": "Kablolu Ağlar",
+    "SubCategory": "Ethernet",
+    "Content": "Ethernet, kablolu ağlarda en yaygın kullanılan teknolojilerden biridir. Genellikle CAT5, CAT6 veya CAT7 kabloları üzerinden veri iletimi gerçekleştirilir.",
+    "Department": 0
+  },
+  {
+    "Category": "Kablosuz İletişim",
+    "SubCategory": "Radyo Frekansları",
+    "Content": "Kablosuz iletişim, radyo frekansları aracılığıyla veri iletimini sağlar. Wi-Fi, Bluetooth ve mobil ağlar gibi farklı kablosuz teknolojiler, farklı frekans bantlarını kullanır.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Performansı",
+    "SubCategory": "Bant Genişliği",
+    "Content": "Bant genişliği, bir ağ bağlantısının belirli bir sürede iletebileceği veri miktarıdır. Yüksek bant genişliği, büyük dosyaların hızlı bir şekilde indirilmesi için s",
+    "Department": 0
+  },
+  {
+    "Category": "Siber Güvenlik",
+    "SubCategory": "Saldırı Türleri",
+    "Content": "Siber saldırılar arasında DDoS, kimlik avı, kötü amaçlı yazılım ve sosyal mühendislik saldırıları yer alır.",
+    "Department": 0
+  },
+  {
+    "Category": "Siber Güvenlik",
+    "SubCategory": "Güvenlik Duvarları",
+    "Content": "Güvenlik duvarları, gelen ve giden ağ trafiğini denetleyerek yetkisiz erişimi engeller.",
+    "Department": 0
+  },
+  {
+    "Category": "Siber Güvenlik",
+    "SubCategory": "Şifreleme Algoritmaları",
+    "Content": "AES, RSA ve SHA gibi şifreleme algoritmaları, veri güvenliği sağlamak için kullanılır.",
+    "Department": 0
+  },
+  {
+    "Category": "Veri Tabanı Yönetimi",
+    "SubCategory": "SQL ve NoSQL",
+    "Content": "SQL veritabanları ilişkisel model kullanırken, NoSQL esnek ve ölçeklenebilir veri saklama çözümleri sunar.",
+    "Department": 0
+  },
+  {
+    "Category": "Veri Tabanı Yönetimi",
+    "SubCategory": "Veri Yedekleme",
+    "Content": "Veri kaybını önlemek için yedekleme stratejileri belirlenmeli ve düzenli olarak yedekleme yapılmalıdır.",
+    "Department": 0
+  },
+  {
+    "Category": "Bulut Bilişim",
+    "SubCategory": "IaaS, PaaS ve SaaS",
+    "Content": "Bulut bilişim, altyapı, platform ve yazılım hizmetleri olarak üç ana modele ayrılır.",
+    "Department": 0
+  },
+  {
+    "Category": "Bulut Bilişim",
+    "SubCategory": "Sunucusuz Bilişim",
+    "Content": "Sunucusuz bilişim, geliştiricilerin sunucu yönetmeden kod çalıştırmasını sağlayan bir modeldir.",
+    "Department": 0
+  },
+  {
+    "Category": "Sistem Yönetimi",
+    "SubCategory": "Sunucu Sanallaştırma",
+    "Content": "Sanallaştırma, fiziksel kaynakları bölerek daha verimli kullanım sağlar. Örneğin, VMware ve Hyper-V.",
+    "Department": 0
+  },
+  {
+    "Category": "Sistem Yönetimi",
+    "SubCategory": "İşletim Sistemleri",
+    "Content": "Windows, Linux ve macOS gibi işletim sistemleri, donanımı yönetmek ve kullanıcı arayüzü sağlamak için kullanılır.",
+    "Department": 0
+  },
+  {
+    "Category": "Sistem Yönetimi",
+    "SubCategory": "Yedekleme ve Kurtarma",
+    "Content": "Sistem çökmesi veya veri kaybı durumunda yedekleme çözümleri kritik önem taşır.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Güvenliği",
+    "SubCategory": "VPN Teknolojileri",
+    "Content": "VPN, internet üzerinden güvenli bağlantılar oluşturmak için kullanılır.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Güvenliği",
+    "SubCategory": "İki Faktörlü Kimlik Doğrulama",
+    "Content": "İki faktörlü kimlik doğrulama, hesap güvenliğini artırmak için ek bir doğrulama katmanı ekler.",
+    "Department": 0
+  },
+  {
+    "Category": "Ağ Güvenliği",
+    "SubCategory": "Saldırı Tespit Sistemleri (IDS)",
+    "Content": "",
+    "Department": 0
+  },
+  {
+    "Category": "Test",
+    "SubCategory": "Test",
+    "Content": "test",
+    "Department": 0
+  },
+  {
+    "Category": "asd",
+    "SubCategory": "asd",
+    "Content": "asd",
+    "Department": 0
+  }
+]

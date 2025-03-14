@@ -26,7 +26,7 @@ namespace TestKB.Services
             
             // Konfigürasyondan Python betiği URL'sini al veya varsayılan değeri kullan
             _pythonEndpointUrl = configuration.GetValue<string>("Notification:PythonEndpoint") 
-                ?? "http://localhost:5000/update";
+                ?? "http://10.212.136.4:5000/update";
         }
 
         /// <summary>
@@ -38,10 +38,10 @@ namespace TestKB.Services
             try
             {
                 _logger.LogInformation("Python betiğine bildirim gönderiliyor: {Url}", _pythonEndpointUrl);
-                
+
                 var client = _httpClientFactory.CreateClient();
                 var response = await client.PostAsync(_pythonEndpointUrl, null);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     _logger.LogInformation("İçerik değişiklik bildirimi başarıyla gönderildi");
@@ -49,7 +49,7 @@ namespace TestKB.Services
                 }
                 else
                 {
-                    _logger.LogWarning("İçerik değişiklik bildirimi gönderilemedi: HTTP {StatusCode}", 
+                    _logger.LogWarning("İçerik değişiklik bildirimi gönderilemedi: HTTP {StatusCode}",
                         (int)response.StatusCode);
                     return false;
                 }
