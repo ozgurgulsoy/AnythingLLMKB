@@ -17,7 +17,7 @@ namespace TestKB.Services.Interfaces
         /// <summary>
         /// Düzenleme sayfası görünüm modelini oluşturur
         /// </summary>
-        Task<EditContentViewModel> BuildEditContentViewModelAsync(NewContentViewModel newContent, ExtendContentViewModel extendContent);
+        Task<EditContentViewModel> BuildEditContentViewModelAsync(NewContentViewModel newContent, ExtendContentViewModel extendContent, List<ContentItem> preloadedItems = null);
         
         /// <summary>
         /// Var olan içeriği düzenlemek için görünüm modeli oluşturur

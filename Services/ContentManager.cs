@@ -58,10 +58,10 @@ namespace TestKB.Services
         /// Düzenleme sayfası görünüm modelini oluşturur
         /// </summary>
         public async Task<EditContentViewModel> BuildEditContentViewModelAsync(
-            NewContentViewModel newContent, ExtendContentViewModel extendContent)
+            NewContentViewModel newContent, ExtendContentViewModel extendContent, List<ContentItem> preloadedItems = null)
         {
             // Always get fresh data for edit operations
-            var items = await _contentService.GetAllAsync(true);
+            var items = preloadedItems?? await _contentService.GetAllAsync(true);
             
             // Get categories and subcategories
             var categories = GetDistinctOrderedCategories(items);

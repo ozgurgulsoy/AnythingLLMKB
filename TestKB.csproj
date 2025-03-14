@@ -6,13 +6,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
-  </ItemGroup>
-	<PropertyGroup>
-		<BuildDependsOn>$(BuildDependsOn);BundleMinify</BuildDependsOn>
-	</PropertyGroup>
-	<Target Name="BundleMinify" AfterTargets="Build">
-		<Exec Command="dotnet bundle" />
-	</Target>
 </Project>
