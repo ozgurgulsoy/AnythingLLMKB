@@ -25,9 +25,7 @@ namespace TestKB.Services
             // Try multiple endpoints in order
             _pythonEndpointUrls = new[]
             {
-                "http://localhost:5000/update",              // Local Python service
-                "http://127.0.0.1:5000/update",              // Alternative local address
-                "http://10.212.136.4:5000/update",           // IP address from your logs
+                "https://5488-212-58-13-88.ngrok-free.app/update" // IP address from your logs
             };
 
             _logger.LogInformation("ContentChangeNotificationService initialized with {Count} endpoint URLs",
