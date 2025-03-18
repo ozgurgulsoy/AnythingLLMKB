@@ -33,9 +33,13 @@ builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<IContentManager, ContentManager>();
 builder.Services.AddScoped<IContentRepository, ContentRepository>();
+// Replace the existing notification service registration with this:
 
+// Register the debug notification service as a singleton
+//builder.Services.AddSingleton<INotificationService, DebugNotificationService>();
+builder.Services.AddSingleton<INotificationService, SimpleNotificationService>();
 // Register notification service
-builder.Services.AddScoped<INotificationService, ContentChangeNotificationService>();
+
 
 // Register error handling service
 builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
@@ -55,7 +59,8 @@ builder.Services.AddCors(options =>
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
-
+builder.Logging.AddFilter("TestKB.Services.DebugNotificationService", LogLevel.Debug);
+builder.Logging.AddFilter("TestKB.Services", LogLevel.Debug);
 // Set logging level
 if (builder.Environment.IsDevelopment())
 {
@@ -102,7 +107,10 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Content}/{action=DepartmentSelect}/{id?}");
 // Add this right before app.Run() in Program.cs
-
+app.MapControllerRoute(
+    name: "notification",
+    pattern: "notification/{action=Status}/{id?}",
+    defaults: new { controller = "Notification" });
 // Ensure App_Data directory exists
 var dataDirectory = Path.Combine(app.Environment.ContentRootPath, "App_Data");
 if (!Directory.Exists(dataDirectory))

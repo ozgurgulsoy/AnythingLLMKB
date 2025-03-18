@@ -1,0 +1,147 @@
+﻿@model TestKB.Models.ViewModels.NotificationStatusViewModel
+@{
+    ViewData["Title"] = "Bildirim Servisi Durumu";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Python Bildirim Servisi Durumu</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert @(Model.IsServiceAvailable ? "alert-success" : "alert-danger")">
+                        <strong>Servis Durumu:</strong>
+                        @(Model.IsServiceAvailable ? "Çalışıyor ✓" : "Çalışmıyor ✗")
+                    </div>
+
+                    <div class="alert @(Model.LastNotificationSuccessful ? "alert-success" : "alert-warning")">
+                        <strong>Son Bildirim:</strong>
+                        @(Model.LastNotificationSuccessful ? "Başarılı ✓" : "Başarısız ✗")
+                    </div>
+
+                    <h6 class="mt-4">Yapılandırma Bilgileri</h6>
+                    <ul class="list-group mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Python Endpoint URL</span>
+                            <span class="badge bg-primary">@Model.EndpointUrl</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Zaman Aşımı</span>
+                            <span class="badge bg-primary">@Model.TimeoutSeconds saniye</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Yeniden Deneme Sayısı</span>
+                            <span class="badge bg-primary">@Model.RetryCount</span>
+                        </li>
+                    </ul>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <button id="checkStatus" class="btn btn-primary">
+                                <i class="fa fa-sync-alt"></i> Durumu Kontrol Et
+                            </button>
+                            <button id="sendTestNotification" class="btn btn-success ml-2">
+                                <i class="fa fa-paper-plane"></i> Test Bildirimi Gönder
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.LastDiagnosticResult))
+                    {
+                        <h6 class="mt-4">Sağlık Kontrolü Tanılama Sonuçları</h6>
+                        <div class="card mb-4">
+                            <div class="card-body bg-light">
+                                <pre class="mb-0">@Model.LastDiagnosticResult</pre>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.LastNotificationDetails))
+                    {
+                        <h6 class="mt-4">Son Bildirim Detayları</h6>
+                        <div class="card mb-4">
+                            <div class="card-body bg-light">
+                                <pre class="mb-0">@Model.LastNotificationDetails</pre>
+                            </div>
+                        </div>
+                    }
+
+                    <div id="detailedResult" class="mt-4" style="display: none;">
+                        <h6>API Yanıtı</h6>
+                        <div class="card">
+                            <div class="card-body bg-light">
+                                <pre id="resultContent" class="mb-0"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkStatusBtn = document.getElementById('checkStatus');
+            const sendTestBtn = document.getElementById('sendTestNotification');
+            const resultDiv = document.getElementById('detailedResult');
+            const resultContent = document.getElementById('resultContent');
+
+            checkStatusBtn.addEventListener('click', async function() {
+                try {
+                    checkStatusBtn.disabled = true;
+                    checkStatusBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Kontrol Ediliyor...';
+
+                    const response = await fetch('/api/notification-diagnostics/status');
+                    const data = await response.json();
+
+                    // Display the result
+                    resultContent.textContent = JSON.stringify(data, null, 2);
+                    resultDiv.style.display = 'block';
+
+                    // Refresh page to update status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } catch (error) {
+                    resultContent.textContent = `Hata: ${error.message}`;
+                    resultDiv.style.display = 'block';
+                } finally {
+                    checkStatusBtn.disabled = false;
+                    checkStatusBtn.innerHTML = '<i class="fa fa-sync-alt"></i> Durumu Kontrol Et';
+                }
+            });
+
+            sendTestBtn.addEventListener('click', async function() {
+                try {
+                    sendTestBtn.disabled = true;
+                    sendTestBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Gönderiliyor...';
+
+                    const response = await fetch('/api/notification-diagnostics/send-test', {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+
+                    // Display the result
+                    resultContent.textContent = JSON.stringify(data, null, 2);
+                    resultDiv.style.display = 'block';
+
+                    // Refresh page to update status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } catch (error) {
+                    resultContent.textContent = `Hata: ${error.message}`;
+                    resultDiv.style.display = 'block';
+                } finally {
+                    sendTestBtn.disabled = false;
+                    sendTestBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Test Bildirimi Gönder';
+                }
+            });
+        });
+    </script>
+}
