@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using TestKB.Services.Notification;
 
 namespace TestKB.Services.Interfaces
 {

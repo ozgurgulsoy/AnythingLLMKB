@@ -107,7 +107,7 @@ namespace TestKB.Controllers
                 var endpoint = _configuration["Notification:PythonEndpoint"];
                 if (string.IsNullOrEmpty(endpoint))
                 {
-                    endpoint = "https://5488-212-58-13-88.ngrok-free.app"; // Fallback
+                    endpoint = "https://701b-88-230-170-83.ngrok-free.app"; // Fallback
                 }
 
                 var uri = new Uri(endpoint);
