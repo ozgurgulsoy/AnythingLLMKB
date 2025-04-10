@@ -220,24 +220,8 @@
                                 </div>
                             </div>
 
-                            <!-- Departman seçimi -->
-                            <div class="form-group">
-                                <label asp-for="ExtendContent.Department" class="font-weight-bold">Departman</label>
-                                <select asp-for="ExtendContent.Department" class="form-control" id="extendDepartment">
-                                    @foreach (var dept in Enum.GetValues(typeof(Department)))
-                                    {
-                                        var isSelected = (Department)dept == currentDepartment;
-                                        @if (isSelected)
-                                        {
-                                            <option value="@dept" selected>@dept</option>
-                                        }
-                                        else
-                                        {
-                                            <option value="@dept">@dept</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
+                            <!-- Remove department dropdown from here and replace with hidden input -->
+                            <input type="hidden" asp-for="ExtendContent.Department" id="extendDepartment" value="@Model.SelectedDepartment" />
 
                             <!-- İçerik alanı -->
                             <div class="form-group" id="contentDiv" style="display:none;">
@@ -299,8 +283,8 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-        <script>
-            // This script section can be left empty since all logic is now in main.js
-            // The content loading is handled by the directLoadContent function in main.js
-        </script>
+    <script>
+        // This script section can be left empty since all logic is now in main.js
+        // The content loading is handled by the directLoadContent function in main.js
+    </script>
 }
