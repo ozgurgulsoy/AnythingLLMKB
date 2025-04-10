@@ -2,15 +2,18 @@ using TestKB.Repositories;
 using TestKB.Services;
 using TestKB.Services.Interfaces;
 using TestKB.Services.Notification;
+using TestKB.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddResponseCaching();
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options => {
+    // Add the authentication filter to all controllers
+    options.Filters.Add<AuthenticationFilter>();
+});
 
 builder.Services.AddHttpClient();
-
 
 builder.Services.AddSession(options =>
 {
@@ -81,7 +84,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Content}/{action=DepartmentSelect}/{id?}");
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 app.MapControllerRoute(
     name: "notification",
@@ -102,5 +105,4 @@ if (!Directory.Exists(dataDirectory))
     }
 }
 
-app.Run();
 app.Run();
