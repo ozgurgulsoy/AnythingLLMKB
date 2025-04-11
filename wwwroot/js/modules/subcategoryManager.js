@@ -214,70 +214,98 @@ const subcategoryManager = (function () {
             return;
         }
 
-        const response = await api.updateSubCategory(
-            categorySelect.value,
-            oldSubCategoryValue,
-            newSubCategory
+        try {
+            const response = await api.updateSubCategory(
+                categorySelect.value,
+                oldSubCategoryValue,
+                newSubCategory
+            );
+
+            if (response && response.success) {
+                // Update was successful
+                handleSuccessfulSubcategoryUpdate(categorySelect, subCategorySelect, hiddenSelectedSubCategory,
+                    editSubCategoryDiv, newSubCategory, response);
+            } else {
+                // API call succeeded but returned an error
+                handleSubcategoryUpdateError(response);
+            }
+        } catch (error) {
+            // API call failed completely
+            console.error("Subcategory update error:", error);
+            notifications.show("Alt kategori güncellenirken bir hata oluştu. Lütfen tekrar deneyin.", "danger");
+            // Keep the edit panel open when error occurs
+        }
+    }
+
+    /**
+     * Alt kategori başarıyla güncellendiğinde yapılacak işlemler
+     */
+    function handleSuccessfulSubcategoryUpdate(categorySelect, subCategorySelect, hiddenSelectedSubCategory,
+        editSubCategoryDiv, newSubCategory, response) {
+        // Önce allItems içindeki tüm ilgili alt kategorileri güncelle
+        if (window.allItems && Array.isArray(window.allItems)) {
+            window.allItems.forEach(item => {
+                // Try both PascalCase and camelCase
+                const itemCategory = item.Category || item.category;
+                const itemSubCategory = item.SubCategory || item.subCategory;
+
+                if (itemCategory &&
+                    itemCategory.trim().toLowerCase() === categorySelect.value.toLowerCase() &&
+                    itemSubCategory &&
+                    itemSubCategory.trim().toLowerCase() === oldSubCategoryValue.toLowerCase()) {
+
+                    // Update subcategory in the cached items
+                    if (item.SubCategory) {
+                        item.SubCategory = newSubCategory;
+                    } else if (item.subCategory) {
+                        item.subCategory = newSubCategory;
+                    }
+                }
+            });
+        }
+
+        // Dropdown'daki tüm alt kategorileri temizle ve yeniden doldur
+        populateSubCategories(categorySelect.value);
+
+        // Şimdi yeni alt kategoriyi seç
+        for (let i = 0; i < subCategorySelect.options.length; i++) {
+            if (subCategorySelect.options[i].value.toLowerCase() === newSubCategory.toLowerCase()) {
+                subCategorySelect.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Gizli input'u güncelle
+        if (hiddenSelectedSubCategory) {
+            hiddenSelectedSubCategory.value = newSubCategory;
+        }
+
+        // Düzenleme panelini kapat
+        if (editSubCategoryDiv) {
+            editSubCategoryDiv.style.display = 'none';
+        }
+
+        // oldSubCategoryValue değişkenini güncelle
+        oldSubCategoryValue = newSubCategory;
+
+        // İçerik alanını güncelle
+        onChange();
+
+        notifications.show(response.message || "Alt kategori başarıyla güncellendi.", "success");
+    }
+
+    /**
+     * Alt kategori güncellenirken hata oluştuğunda yapılacak işlemler
+     */
+    function handleSubcategoryUpdateError(response) {
+        // Hata mesajını göster
+        notifications.show(
+            response?.message || "Alt kategori güncellenirken bir hata oluştu.",
+            "danger"
         );
 
-        if (response && response.success) {
-            // Önce allItems içindeki tüm ilgili alt kategorileri güncelle
-            if (window.allItems && Array.isArray(window.allItems)) {
-                window.allItems.forEach(item => {
-                    // Try both PascalCase and camelCase
-                    const itemCategory = item.Category || item.category;
-                    const itemSubCategory = item.SubCategory || item.subCategory;
-
-                    if (itemCategory &&
-                        itemCategory.trim().toLowerCase() === categorySelect.value.toLowerCase() &&
-                        itemSubCategory &&
-                        itemSubCategory.trim().toLowerCase() === oldSubCategoryValue.toLowerCase()) {
-
-                        // Update subcategory in the cached items
-                        if (item.SubCategory) {
-                            item.SubCategory = newSubCategory;
-                        } else if (item.subCategory) {
-                            item.subCategory = newSubCategory;
-                        }
-                    }
-                });
-            }
-
-            // Dropdown'daki tüm alt kategorileri temizle ve yeniden doldur
-            populateSubCategories(categorySelect.value);
-
-            // Şimdi yeni alt kategoriyi seç
-            for (let i = 0; i < subCategorySelect.options.length; i++) {
-                if (subCategorySelect.options[i].value.toLowerCase() === newSubCategory.toLowerCase()) {
-                    subCategorySelect.selectedIndex = i;
-                    break;
-                }
-            }
-
-            // Gizli input'u güncelle
-            if (hiddenSelectedSubCategory) {
-                hiddenSelectedSubCategory.value = newSubCategory;
-            }
-
-            // Düzenleme panelini kapat
-            if (editSubCategoryDiv) {
-                editSubCategoryDiv.style.display = 'none';
-            }
-
-            // oldSubCategoryValue değişkenini güncelle
-            oldSubCategoryValue = newSubCategory;
-
-            // İçerik alanını güncelle
-            onChange();
-
-            notifications.show(response.message || "Alt kategori başarıyla güncellendi.", "success");
-        } else {
-            // Hata mesajını göster
-            notifications.show(
-                response?.message || "Alt kategori güncellenirken bir hata oluştu.",
-                "danger"
-            );
-        }
+        // Don't close the edit panel - allow user to fix and retry
+        console.log("Subcategory update returned error:", response);
     }
 
     /**

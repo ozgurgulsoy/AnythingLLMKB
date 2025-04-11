@@ -218,7 +218,10 @@ namespace TestKB.Services
             
             _logger.LogInformation("Kategori güncellendi: {OldCategory} -> {NewCategory}", oldCategory, newCategory);
         }
-        
+
+        // Fix for the UpdateSubCategoryAsync method in Services/ContentManager.cs
+        // Replace the existing method with this corrected version
+
         /// <summary>
         /// Alt kategori adını günceller
         /// </summary>
@@ -226,37 +229,38 @@ namespace TestKB.Services
         {
             if (string.IsNullOrWhiteSpace(category))
                 throw new ArgumentException("Kategori adı boş olamaz", nameof(category));
-                
+
             if (string.IsNullOrWhiteSpace(oldSubCategory))
                 throw new ArgumentException("Eski alt kategori adı boş olamaz", nameof(oldSubCategory));
-                
+
             if (string.IsNullOrWhiteSpace(newSubCategory))
                 throw new ArgumentException("Yeni alt kategori adı boş olamaz", nameof(newSubCategory));
-                
+
             var items = await _contentService.GetAllAsync(true);
-            
+
             // First check if the new subcategory already exists
-            if (items.Any(x => 
+            if (items.Any(x =>
                 x.Category.Equals(category, StringComparison.OrdinalIgnoreCase) &&
                 x.SubCategory?.Equals(newSubCategory, StringComparison.OrdinalIgnoreCase) == true))
             {
                 throw new InvalidOperationException($"Bu alt kategori zaten mevcut: {category}/{newSubCategory}");
             }
-            
+
             // Rename all matching subcategories
             UpdateSubcategoryNameInItems(items, category, oldSubCategory, newSubCategory);
-            
+
             // Save all changes
             await _contentService.UpdateManyAsync(items);
-            
+
             // Invalidate category-related caches
             InvalidateCategoryCaches();
             _cacheService.Remove($"{SUBCATEGORIES_CACHE_PREFIX}{category}");
-            
-            _logger.LogInformation("Alt kategori güncellendi: {Category}/{OldSubCategory} -> {Category}/{NewSubCategory}", 
-                category, oldSubCategory, newSubCategory);
+
+            // Fix: Correct the logging statement parameter count and format
+            _logger.LogInformation("Alt kategori güncellendi: {OldPath} -> {NewPath}",
+                $"{category}/{oldSubCategory}", $"{category}/{newSubCategory}");
         }
-        
+
         /// <summary>
         /// Yeni alt kategori ekler
         /// </summary>

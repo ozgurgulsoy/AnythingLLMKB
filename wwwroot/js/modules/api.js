@@ -109,6 +109,8 @@ const api = (function() {
         );
     }
 
+    // Enhanced updateSubCategory function in wwwroot/js/modules/api.js
+
     /**
      * Alt kategori güncelleme API çağrısı
      * @param {string} category - Kategori adı
@@ -117,31 +119,41 @@ const api = (function() {
      * @returns {Promise<any>} - API yanıtı
      */
     async function updateSubCategory(category, oldSubCategory, newSubCategory) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        const response = await call(
-            '/Content/UpdateSubCategory',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': token
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const response = await call(
+                '/Content/UpdateSubCategory',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        Category: category,
+                        OldSubCategory: oldSubCategory,
+                        NewSubCategory: newSubCategory
+                    })
                 },
-                body: JSON.stringify({
-                    Category: category,
-                    OldSubCategory: oldSubCategory,
-                    NewSubCategory: newSubCategory
-                })
-            },
-            null,
-            'Alt kategori güncellenirken'
-        );
+                null,
+                'Alt kategori güncellenirken'
+            );
 
-        // Force a complete refresh of all content items after updating
-        if (response && response.success) {
-            await getContentItems(true); // Pass true to force reload
+            // Force a complete refresh of all content items after updating
+            if (response && response.success) {
+                await getContentItems(); // Updated to not force reload to use correct caching
+            }
+
+            return response;
+        } catch (error) {
+            console.error("Error in updateSubCategory:", error);
+            // Return a structured error object 
+            return {
+                success: false,
+                message: `Alt kategori güncellenirken bir hata oluştu: ${error.message}`,
+                error: error
+            };
         }
-
-        return response;
     }
 
     /**
