@@ -118,7 +118,7 @@ const api = (function() {
      */
     async function updateSubCategory(category, oldSubCategory, newSubCategory) {
         const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        return await call(
+        const response = await call(
             '/Content/UpdateSubCategory',
             {
                 method: 'POST',
@@ -135,6 +135,13 @@ const api = (function() {
             null,
             'Alt kategori güncellenirken'
         );
+
+        // Force a complete refresh of all content items after updating
+        if (response && response.success) {
+            await getContentItems(true); // Pass true to force reload
+        }
+
+        return response;
     }
 
     /**

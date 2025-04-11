@@ -89,27 +89,35 @@ namespace TestKB.Services
                 SelectedDepartment = department
             };
         }
-        
+
+        // This is the updated CreateExtendContentViewModelAsync method in the ContentManager class
+        // that should be placed in Services/ContentManager.cs
+
         /// <summary>
         /// Var olan içeriği düzenlemek için görünüm modeli oluşturur
         /// </summary>
         public async Task<ExtendContentViewModel> CreateExtendContentViewModelAsync(
             string selectedCategory, string selectedSubCategory, Department department)
         {
-            _logger.LogInformation("ExtendContentViewModel oluşturuluyor. Category: {Category}, SubCategory: {SubCategory}, Department: {Department}", 
-                selectedCategory, selectedSubCategory, department);
-                
+            _logger.LogInformation("ExtendContentViewModel oluşturuluyor. Category: {Category}, SubCategory: {SubCategory}",
+                selectedCategory, selectedSubCategory);
+
             var model = new ExtendContentViewModel
             {
                 SelectedCategory = selectedCategory,
                 SelectedSubCategory = selectedSubCategory,
+                // Setting Department property but not using it for content retrieval
                 Department = department
             };
-            
+
             if (!string.IsNullOrWhiteSpace(selectedCategory) && !string.IsNullOrWhiteSpace(selectedSubCategory))
             {
-                var item = await _contentService.GetByCategoryAndSubcategoryAsync(selectedCategory, selectedSubCategory, department);
-                
+                // Get all content items with the given category and subcategory
+                var items = await _contentService.GetAllAsync();
+                var item = items.FirstOrDefault(i =>
+                    string.Equals(i.Category.Trim(), selectedCategory.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(i.SubCategory?.Trim(), selectedSubCategory?.Trim(), StringComparison.OrdinalIgnoreCase));
+
                 if (item != null)
                 {
                     _logger.LogInformation("İçerik bulundu: {Content}", item.Content);
@@ -117,14 +125,14 @@ namespace TestKB.Services
                 }
                 else
                 {
-                    _logger.LogWarning("Bu kategori ve alt kategori için içerik bulunamadı: {Category}/{SubCategory} (Department: {Department})", 
-                        selectedCategory, selectedSubCategory, department);
+                    _logger.LogWarning("Bu kategori ve alt kategori için içerik bulunamadı: {Category}/{SubCategory}",
+                        selectedCategory, selectedSubCategory);
                 }
             }
-            
+
             return model;
         }
-        
+
         /// <summary>
         /// Yeni içerik ekler
         /// </summary>

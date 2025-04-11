@@ -29,9 +29,9 @@ namespace TestKB.Controllers
             _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
             _contentService = contentService ?? throw new ArgumentNullException(nameof(contentService));
         }
-        
+
         public IActionResult DepartmentSelect() => View();
-        
+
         [HttpPost]
         public IActionResult SelectDepartment(Department department)
         {
@@ -61,7 +61,7 @@ namespace TestKB.Controllers
             {
                 // Get current department from session
                 Department currentDepartment = GetCurrentDepartment();
-                
+
                 var viewModel = await _contentManager.BuildContentListViewModelAsync(category, currentDepartment);
                 return View(viewModel);
             }
@@ -200,7 +200,7 @@ namespace TestKB.Controllers
                     var error = _errorHandlingService.HandleValidationErrors(validationErrors);
 
                     _logger.LogWarning("ModelState hataları: {Errors}", string.Join("; ", validationErrors));
-                    
+
                     var freshItems = await _contentService.GetAllAsync(true);
                     var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), model);
                     ViewBag.AllItemsJson = JsonSerializer.Serialize(freshItems);
@@ -209,15 +209,42 @@ namespace TestKB.Controllers
                     return View("Edit", viewModel);
                 }
 
-                // Ensure department is set if not provided
-                if (model.Department == 0)
+                // Instead of a single content item, we need to update all matching category/subcategory items
+                var allItems = await _contentService.GetAllAsync(true);
+                var matchingItems = allItems.Where(i =>
+                    string.Equals(i.Category.Trim(), model.SelectedCategory.Trim(), StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(i.SubCategory?.Trim(), model.SelectedSubCategory?.Trim(), StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+
+                if (matchingItems.Any())
                 {
-                    model.Department = GetCurrentDepartment();
+                    // Update all matching items with the new content
+                    foreach (var item in matchingItems)
+                    {
+                        item.Content = model.Content;
+                    }
+
+                    await _contentService.UpdateManyAsync(allItems);
+
+                    TempData["SuccessMessage"] = "İçerik başarıyla güncellendi.";
+                }
+                else
+                {
+                    // If no matching items exist, create a new one with the current department
+                    var currentDepartment = GetCurrentDepartment();
+                    var newItem = new ContentItem
+                    {
+                        Category = model.SelectedCategory.Trim(),
+                        SubCategory = model.SelectedSubCategory?.Trim(),
+                        Content = model.Content.Trim(),
+                        Department = currentDepartment
+                    };
+
+                    await _contentService.CreateAsync(newItem);
+
+                    TempData["SuccessMessage"] = "Yeni içerik başarıyla oluşturuldu.";
                 }
 
-                await _contentManager.UpdateContentAsync(model);
-
-                TempData["SuccessMessage"] = _errorHandlingService.CreateSuccessResponse("İçerik başarıyla güncellendi.").Message;
                 TempData["ActiveTab"] = "extendContent";
                 return RedirectToAction("Edit");
             }
@@ -231,7 +258,7 @@ namespace TestKB.Controllers
                 }
 
                 TempData["ErrorMessage"] = error.Message;
-                
+
                 var freshItems = await _contentService.GetAllAsync(true);
                 var viewModel = await _contentManager.BuildEditContentViewModelAsync(new NewContentViewModel(), model);
                 ViewBag.AllItemsJson = JsonSerializer.Serialize(freshItems);
@@ -262,7 +289,7 @@ namespace TestKB.Controllers
                 return Json(error);
             }
         }
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateSubCategory([FromBody] UpdateSubCategoryViewModel model)
@@ -389,11 +416,8 @@ namespace TestKB.Controllers
                     return Json(new { success = false, message = "Kategori veya alt kategori boş olamaz." });
                 }
 
-                // Get current department from session
-                Department department = GetCurrentDepartment();
-
-                // Get the specific content item
-                var contentItem = await _contentService.GetByCategoryAndSubcategoryAsync(category, subcategory, department);
+                // Get content without department filtering
+                var contentItem = await _contentService.GetByCategoryAndSubcategoryAsync(category, subcategory);
 
                 if (contentItem == null)
                 {
@@ -415,8 +439,7 @@ namespace TestKB.Controllers
                 return Json(error);
             }
         }
-        // Add this new action method to your ContentController.cs
-        // Add this method to your ContentController.cs
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteContent(string category, string subcategory, int department)

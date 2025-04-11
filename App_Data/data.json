@@ -20,7 +20,7 @@
   {
     "Category": "Kablosuz Ağlar",
     "SubCategory": "Wi-Fi Teknolojisi",
-    "Content": "Wi-Fi, kablosuz ağlarda kullanılan bir teknolojidir. IEEE 802.11 standartlarına dayanır ve cihazların kablosuz olarak internete veya ağa bağlanmasını sağlar.",
+    "Content": "Wi-Fi, kablosuz ağlarda kullanılan bir teknolojidir. IEEE 802.11 standartlarına dayanır ve cihazların kablosuz olarak internete veya ağa bağlanmasını sağlar. TEST",
     "Department": 0
   },
   {
@@ -139,8 +139,14 @@
   },
   {
     "Category": "Test",
-    "SubCategory": "Test",
+    "SubCategory": "TestXS",
     "Content": "Test",
-    "Department": 2
+    "Department": 0
+  },
+  {
+    "Category": "Test",
+    "SubCategory": "TestX",
+    "Content": "Test",
+    "Department": 0
   }
 ]

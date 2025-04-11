@@ -53,7 +53,6 @@ function directLoadContent() {
     // Get current values
     const categorySelect = document.getElementById('selectedCategory');
     const subCategorySelect = document.getElementById('selectedSubCategory');
-    const departmentSelect = document.getElementById('extendDepartment');
 
     if (!categorySelect || !subCategorySelect ||
         !categorySelect.value || !subCategorySelect.value) {
@@ -63,23 +62,14 @@ function directLoadContent() {
 
     const category = categorySelect.value.trim();
     const subcategory = subCategorySelect.value.trim();
-    const department = departmentSelect ? parseInt(departmentSelect.value, 10) : (window.currentDepartment || 0);
 
-    console.log(`Directly loading content for ${category}/${subcategory} (Department: ${department})`);
-    console.log("Department type:", typeof department);
+    // Removed department variable and references
+
+    console.log(`Directly loading content for ${category}/${subcategory}`);
 
     // Loop through allItems to find a match
     if (window.allItems && Array.isArray(window.allItems)) {
         console.log(`Searching through ${window.allItems.length} items`);
-
-        // Log first few items to debug
-        if (window.allItems.length > 0) {
-            console.log("Sample items:", window.allItems.slice(0, 3).map(item => ({
-                cat: item.Category || item.category || "",
-                subcat: item.SubCategory || item.subCategory || "",
-                dept: item.Department !== undefined ? item.Department : (item.department !== undefined ? item.department : 0)
-            })));
-        }
 
         // Try to find the matching item with better logging
         let found = false;
@@ -89,25 +79,17 @@ function directLoadContent() {
             // Get item properties - handle both camelCase and PascalCase
             const itemCategory = (item.Category || item.category || "").trim();
             const itemSubCategory = (item.SubCategory || item.subCategory || "").trim();
-            const itemDepartment = item.Department !== undefined ? item.Department :
-                (item.department !== undefined ? item.department : 0);
 
             // Case-insensitive comparison for strings
             const categoryMatch = itemCategory.toLowerCase() === category.toLowerCase();
             const subcategoryMatch = itemSubCategory.toLowerCase() === subcategory.toLowerCase();
 
-            // More flexible department matching
-            // Match if either we're not filtering by department (0) or the departments match
-            const departmentMatch = department === 0 || itemDepartment === 0 ||
-                itemDepartment === department;
-
             // Debug potential matches
             if (categoryMatch && subcategoryMatch) {
-                console.log(`Found potential match: ${itemCategory}/${itemSubCategory} (Dept: ${itemDepartment})`);
-                console.log(`Department match: ${departmentMatch} (user: ${department}, item: ${itemDepartment})`);
+                console.log(`Found potential match: ${itemCategory}/${itemSubCategory}`);
             }
 
-            if (categoryMatch && subcategoryMatch && departmentMatch) {
+            if (categoryMatch && subcategoryMatch) {
                 found = true;
                 console.log("Match found!", item);
 
@@ -133,7 +115,7 @@ function directLoadContent() {
         }
 
         if (!found) {
-            console.log(`No item found for ${category}/${subcategory} with department ${department}`);
+            console.log(`No item found for ${category}/${subcategory}`);
 
             // Show the content area even if no match is found - let user create content
             const contentField = document.getElementById('extendContent');

@@ -31,9 +31,7 @@ const subcategoryManager = (function () {
 
         if (!category) return;
 
-        // Get current department from window or default to 0
-        const currentDepartment = window.currentDepartment || 0;
-        console.log('Current department for subcategory population:', currentDepartment);
+        // Remove department filtering - get all subcategories for the given category
         console.log('Looking for subcategories for category:', category);
 
         // Seçilen kategoriye ait alt kategorileri bulur
@@ -42,22 +40,14 @@ const subcategoryManager = (function () {
         if (window.allItems && Array.isArray(window.allItems)) {
             console.log('Total items in allItems:', window.allItems.length);
 
-            // Log sample item to check structure
-            if (window.allItems.length > 0) {
-                console.log('Sample item structure:', window.allItems[0]);
-            }
-
             window.allItems.forEach(function (item) {
                 // Try both PascalCase and camelCase to be safe
                 const category_value = item.Category || item.category;
                 const subcategory_value = item.SubCategory || item.subCategory;
-                const department_value = item.Department !== undefined ? item.Department :
-                    (item.department !== undefined ? item.department : 0);
 
-                // Match both category and department
+                // Match only by category - removed department filtering
                 if (category_value &&
-                    category_value.trim().toLowerCase() === category.trim().toLowerCase() &&
-                    (currentDepartment === 0 || department_value === currentDepartment)) {
+                    category_value.trim().toLowerCase() === category.trim().toLowerCase()) {
                     subcats.add(subcategory_value ? subcategory_value.trim() : "");
                 }
             });
@@ -85,7 +75,6 @@ const subcategoryManager = (function () {
         const contentDiv = document.getElementById('contentDiv');
         const submitContentBtn = document.getElementById('submitContentBtn');
         const categorySelect = document.getElementById('selectedCategory');
-        const departmentSelect = document.getElementById('extendDepartment');
 
         if (!subCategorySelect || !categorySelect) {
             console.error('Alt kategori elementi bulunamadı');
@@ -106,32 +95,24 @@ const subcategoryManager = (function () {
             }
 
             let content = "";
-            const currentDepartment = departmentSelect ? parseInt(departmentSelect.value, 10) : (window.currentDepartment || 0);
 
             console.log('Looking for match with:', {
                 category: categorySelect.value.toLowerCase(),
-                subcategory: subCategorySelect.value.toLowerCase(),
-                department: currentDepartment
+                subcategory: subCategorySelect.value.toLowerCase()
+                // Removed department filter
             });
 
             if (window.allItems && Array.isArray(window.allItems)) {
                 console.log('Searching through', window.allItems.length, 'items');
 
-                // Log some items to check their structure
-                if (window.allItems.length > 0) {
-                    console.log('First few items:', window.allItems.slice(0, 3));
-                }
-
                 // Fixed: Add null/undefined checks for all properties
                 const matches = window.allItems.filter(function (item) {
                     const itemCategory = (item.Category || item.category || "").toLowerCase();
                     const itemSubCategory = (item.SubCategory || item.subCategory || "").toLowerCase();
-                    const itemDepartment = item.Department !== undefined ? item.Department :
-                        (item.department !== undefined ? item.department : 0);
 
+                    // Removed department condition - just match by category and subcategory
                     return itemCategory === categorySelect.value.toLowerCase() &&
-                        itemSubCategory === subCategorySelect.value.toLowerCase() &&
-                        (currentDepartment === 0 || itemDepartment === currentDepartment);
+                        itemSubCategory === subCategorySelect.value.toLowerCase();
                 });
 
                 console.log('Matches found:', matches.length);
@@ -240,32 +221,62 @@ const subcategoryManager = (function () {
         );
 
         if (response && response.success) {
-            // Mevcut seçili alt kategoriyi UI'da günceller
+            // Önce allItems içindeki tüm ilgili alt kategorileri güncelle
+            if (window.allItems && Array.isArray(window.allItems)) {
+                window.allItems.forEach(item => {
+                    // Try both PascalCase and camelCase
+                    const itemCategory = item.Category || item.category;
+                    const itemSubCategory = item.SubCategory || item.subCategory;
+
+                    if (itemCategory &&
+                        itemCategory.trim().toLowerCase() === categorySelect.value.toLowerCase() &&
+                        itemSubCategory &&
+                        itemSubCategory.trim().toLowerCase() === oldSubCategoryValue.toLowerCase()) {
+
+                        // Update subcategory in the cached items
+                        if (item.SubCategory) {
+                            item.SubCategory = newSubCategory;
+                        } else if (item.subCategory) {
+                            item.subCategory = newSubCategory;
+                        }
+                    }
+                });
+            }
+
+            // Dropdown'daki tüm alt kategorileri temizle ve yeniden doldur
+            populateSubCategories(categorySelect.value);
+
+            // Şimdi yeni alt kategoriyi seç
             for (let i = 0; i < subCategorySelect.options.length; i++) {
-                if (subCategorySelect.options[i].value === subCategorySelect.value) {
-                    subCategorySelect.options[i].text = newSubCategory;
-                    subCategorySelect.options[i].value = newSubCategory;
+                if (subCategorySelect.options[i].value.toLowerCase() === newSubCategory.toLowerCase()) {
+                    subCategorySelect.selectedIndex = i;
                     break;
                 }
             }
 
-            subCategorySelect.value = newSubCategory;
-
-            if (editSubCategoryDiv) {
-                editSubCategoryDiv.style.display = 'none';
-            }
-
+            // Gizli input'u güncelle
             if (hiddenSelectedSubCategory) {
                 hiddenSelectedSubCategory.value = newSubCategory;
             }
 
+            // Düzenleme panelini kapat
+            if (editSubCategoryDiv) {
+                editSubCategoryDiv.style.display = 'none';
+            }
+
+            // oldSubCategoryValue değişkenini güncelle
             oldSubCategoryValue = newSubCategory;
 
-            api.getContentItems(function () {
-                populateSubCategories(categorySelect.value);
-            });
+            // İçerik alanını güncelle
+            onChange();
 
             notifications.show(response.message || "Alt kategori başarıyla güncellendi.", "success");
+        } else {
+            // Hata mesajını göster
+            notifications.show(
+                response?.message || "Alt kategori güncellenirken bir hata oluştu.",
+                "danger"
+            );
         }
     }
 
@@ -310,7 +321,6 @@ const subcategoryManager = (function () {
         const hiddenSelectedSubCategory = document.getElementById('hiddenSelectedSubCategory');
         const newSubCategoryInput = document.getElementById('newSubCategoryInput');
         const addSubCategoryDiv = document.getElementById('addSubCategoryDiv');
-        const departmentSelect = document.getElementById('extendDepartment');
 
         if (!categorySelect || !subCategorySelect || !newSubCategoryInput) {
             console.error('Alt kategori ekleme elementleri bulunamadı');
